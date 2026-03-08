@@ -1,5 +1,9 @@
 import os
 import requests
+import dotenv
+
+dotenv.load_dotenv()
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # ============ GEMINI ============
 def call_gemini(system_prompt, user_message):
@@ -43,7 +47,7 @@ def call_gpt(system_prompt, user_message):
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {os.getenv('OPENAI_KEY')}"
+        "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
 
     payload = {
