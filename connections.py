@@ -108,8 +108,20 @@ def call_kimi(system_prompt, user_message):
 
 
 # ============ OLLAMA (LOCAL MODELS) ============
+def get_ollama_models():
+    url = "http://10.216.143.246:11434/api/tags"
+    try:
+        res = requests.get(url)
+        res.raise_for_status()
+        data = res.json()
+        return [model["name"] for model in data.get("models", [])]
+    except Exception as e:
+        print(f"Error fetching Ollama models: {e}")
+        return []
+
+
 def call_ollama(system_prompt, user_message, model="llama3"):
-    url = "http://localhost:11434/api/chat"
+    url = "http://10.216.143.246:11434/api/chat"
 
     payload = {
         "model": model,
