@@ -282,6 +282,24 @@
                 setLoading(false);
             };
 
+            const stopBattle = async () => {
+                if (!battleId) return;
+                try {
+                    const res = await fetch(`/api/battle/stop?battle_id=${battleId}`, {
+                        method: "POST"
+                    });
+                    const data = await res.json();
+                    if (data.status === "stopped") {
+                        setFinished(true);
+                        setWinner("stopped");
+                        setAutoPlay(false);
+                    }
+                } catch (err) {
+                    console.error("Error stopping battle:", err);
+                }
+            };
+
+
             const takeTurn = async () => {
                 if (!battleId || finished || loading) return;
                 setLoading(true);
@@ -449,6 +467,14 @@
                                             className={`flex-1 ${autoPlay ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white py-2 px-2 rounded-md transition duration-200 text-sm`}
                                         >
                                             {autoPlay ? 'Stop Auto' : 'Auto Play'}
+                                        </button>
+
+                                        <button 
+                                            onClick={stopBattle}
+                                            disabled={finished}
+                                            className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-slate-700 text-white py-2 px-2 rounded-md transition duration-200 text-sm"
+                                        >
+                                            Stop Match
                                         </button>
                                     </div>
                                     {gameMode === 'word_guessing' && (

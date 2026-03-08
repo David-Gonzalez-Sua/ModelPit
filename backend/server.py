@@ -166,6 +166,20 @@ async def get_battle(battle_id: str):
         "round": game.round
     }
 
+
+@app.post("/api/battle/stop")
+async def stop_battle(battle_id: str):
+    if battle_id not in battles:
+        raise HTTPException(status_code=404, detail="Battle not found")
+    
+    battle = battles[battle_id]
+    game = battle["game"]
+    game.running = False
+    if not game.winner:
+        game.winner = "stopped"
+    
+    return {"status": "stopped", "battleId": battle_id}
+
 # Serve static files
 if os.path.exists("static"):
     app.mount("/", StaticFiles(directory="static", html=True), name="static")
