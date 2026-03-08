@@ -159,8 +159,8 @@ async def get_battle(battle_id: str):
     }
 
 # Serve static files
-if os.path.exists("static"):
-    app.mount("/", StaticFiles(directory="static", html=True), name="static")
+if os.path.exists("./backend/static"):
+    app.mount("/", StaticFiles(directory="./backend/static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
