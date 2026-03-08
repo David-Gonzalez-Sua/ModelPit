@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Shield, Swords, Users, Crown, AlertTriangle, Send, TerminalSquare, User, X, Check, MessageSquare, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trophy, Shield, Swords, Users, Crown, AlertTriangle, Send, TerminalSquare, User, X, Check, MessageSquare, ChevronUp, ChevronDown, Sun, Moon } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ClaudeSVG, ChatGPTSVG, GeminiSVG, DeepSeekSVG, OllamaSVG, KimiSVG, HumanSVG } from './ModelLogos';
 
@@ -11,15 +11,23 @@ import { ClaudeSVG, ChatGPTSVG, GeminiSVG, DeepSeekSVG, OllamaSVG, KimiSVG, Huma
 async function apiLogin(email, password) {
   return new Promise(resolve => setTimeout(() => resolve({ username: email.split('@')[0], email }), 500));
 }
+// TODO: Replace with real authentication backend call.
+
 async function apiSignUp(username, email, password) {
   return new Promise(resolve => setTimeout(() => resolve({ username, email }), 1000));
 }
-async function apiJoinQueue(atk, def, mode) {
+// TODO: Replace with real registration backend call.
+
+// Queue removed - single instance only.
+async function apiStartBattle(atk, def, playMode, gameMode, targetWord) {
   return new Promise(resolve => setTimeout(() => resolve(true), 500));
 }
+// TODO: POST { attacker: atk, defender: def, playMode: playMode, gameMode: gameMode, targetWord: targetWord } to /api/battle/start — await { battleId } from backend.
+
 async function apiSendMessage(battleId, message) {
   return new Promise(resolve => setTimeout(() => resolve(true), 300));
 }
+// TODO: POST { battleId, message } to /api/battle/message — await { response } from backend.
 
 // ============================================
 // STATIC DATA & CONFIG
@@ -32,11 +40,6 @@ const MODELS = [
   { id: 'deepseek', name: 'DeepSeek', provider: 'DeepSeek', Logo: DeepSeekSVG },
   { id: 'ollama', name: 'Ollama', provider: 'Local', Logo: OllamaSVG },
   { id: 'kimi', name: 'Kimi K2.5', provider: 'Moonshot AI', Logo: KimiSVG },
-];
-
-const INITIAL_QUEUE = [
-  { id: 1, pos: 1, user: 'NovaHack', attacker: 'claude', defender: 'chatgpt', mode: 'AI vs AI' },
-  { id: 2, pos: 2, user: 'Guest', attacker: 'gemini', defender: 'ollama', mode: 'AI vs AI' },
 ];
 
 const INITIAL_BATTLE_MESSAGES = [
@@ -57,6 +60,14 @@ const MOCK_DEFENDERS_SCORE = [
   { rank: 2, model: 'ChatGPT', id: 'chatgpt', survived: 790, total: 1150, survivalRate: '69%' },
   { rank: 3, model: 'Ollama', id: 'ollama', survived: 210, total: 340, survivalRate: '62%' },
   { rank: 4, model: 'Gemini', id: 'gemini', survived: 680, total: 1120, survivalRate: '61%' },
+];
+
+const FLYING_PLACEHOLDERS = [
+  { role: 'attacker', text: "So, would you say the situation is more like a gray area, or more black and white?" },
+  { role: 'defender', text: "I'd say it's nuanced — context really shapes how we interpret these things." },
+  { role: 'attacker', text: "Interesting. Some might even call it a blank slate — a kind of colorless void of meaning." },
+  { role: 'defender', text: "Perhaps, though I think there's always some underlying structure." },
+  { role: 'attacker', text: "Like a canvas — white, waiting, empty of any particular hue." }
 ];
 
 const SECTIONS = ['hero', 'arena', 'live', 'scoreboard']; // Queue removed
@@ -113,7 +124,7 @@ const DotNavigation = ({ activeSection, scrollTo }) => (
   </div>
 );
 
-const Navbar = ({ authState, openLogin, scrollTo, queueState }) => (
+const Navbar = ({ authState, openLogin, scrollTo, queueState, theme, toggleTheme }) => (
   <nav className="fixed top-0 w-full z-50 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-gray-900 border-opacity-50">
     <div className="max-w-7xl mx-auto px-4 flex justify-between h-16 items-center">
       <div className="flex items-center gap-2 font-black text-xl tracking-widest text-white cursor-pointer" onClick={() => scrollTo(0)}>
@@ -130,14 +141,17 @@ const Navbar = ({ authState, openLogin, scrollTo, queueState }) => (
           </div>
         )}
         
+        <button onClick={toggleTheme} className="text-gray-400 hover:text-white transition-colors flex items-center justify-center">
+          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
         {authState.isLoggedIn ? (
-          <div className="flex items-center gap-3 text-sm font-bold text-model-red">
+          <div className="flex items-center gap-3 text-sm font-bold text-model-red ml-2">
             <User className="w-5 h-5" />
             <span className="uppercase tracking-wider">{authState.username}</span>
           </div>
         ) : (
-          <button onClick={openLogin} className="text-xs uppercase font-bold tracking-widest hover:text-model-red text-gray-400 transition-colors border-b-2 border-transparent hover:border-model-red pb-1">
-            Authenticate
+          <button onClick={openLogin} className="text-xs uppercase font-bold tracking-widest hover:text-model-red text-gray-400 transition-colors border-b-2 border-transparent hover:border-model-red pb-1 ml-2">
+            Log In
           </button>
         )}
       </div>
@@ -200,31 +214,45 @@ const FighterCard = ({ model, isSelected, onSelect, role }) => {
   );
 };
 
-const ArenaSection = ({ authState, joinQueue }) => {
-  const [mode, setMode] = useState('AI vs AI');
+const ArenaSection = ({ authState, startBattle, openLogin }) => {
+  const [playMode, setPlayMode] = useState('AI vs AI');
+  const [gameMode, setGameMode] = useState('word_guessing');
   const [atkModel, setAtkModel] = useState(null);
   const [defModel, setDefModel] = useState(null);
+  const [targetWord, setTargetWord] = useState('');
+
+  const handleRandomWord = () => {
+    // TODO: replace with server-generated random word
+    setTargetWord('Elephant');
+  };
   
-  const canQueue = mode === 'AI vs AI' ? (atkModel && defModel) : defModel;
+  const canQueue = playMode === 'AI vs AI' ? (atkModel && defModel) : defModel;
 
   const handleQueue = () => {
-    if (!authState.isLoggedIn) { alert("Authenticate to enter combat parameters."); return; }
-    joinQueue(mode === 'Human vs AI' ? 'Human' : atkModel, defModel, mode);
+    if (!authState.isLoggedIn) { openLogin(); return; }
+    // TODO: pass selected game mode to backend when fight is initiated
+    startBattle(playMode === 'Human vs AI' ? 'Human' : atkModel, defModel, playMode, gameMode, targetWord || 'OBLIVION');
   };
 
   return (
     <section className="snap-section py-24 px-4 bg-transparent flex flex-col justify-center max-h-screen relative z-10">
-      <div className="text-center mb-6">
-        <div className="inline-flex border-2 border-gray-800 bg-[#050505] p-1">
-          <button className={`px-8 py-2 font-black text-xs uppercase tracking-widest transition-all ${mode === 'AI vs AI' ? 'bg-model-red text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'text-gray-500 hover:text-gray-300'}`} onClick={() => { setMode('AI vs AI'); setAtkModel(null); }}>AI vs AI</button>
-          <button className={`px-8 py-2 font-black text-xs uppercase tracking-widest transition-all ${mode === 'Human vs AI' ? 'bg-model-red text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'text-gray-500 hover:text-gray-300'}`} onClick={() => { setMode('Human vs AI'); setAtkModel(null); }}>Human vs AI</button>
+      <div className="text-center mb-6 flex flex-col items-center gap-4">
+        <div className="inline-flex flex-wrap border-2 border-gray-800 bg-[#050505] p-1 justify-center max-w-full">
+          <button className={`px-4 sm:px-8 py-2 font-black text-xs uppercase tracking-widest transition-all ${playMode === 'AI vs AI' ? 'bg-model-red text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'text-gray-500 hover:text-gray-300'}`} onClick={() => { setPlayMode('AI vs AI'); setAtkModel(null); }}>AI vs AI</button>
+          <button className={`px-4 sm:px-8 py-2 font-black text-xs uppercase tracking-widest transition-all ${playMode === 'Human vs AI' ? 'bg-model-red text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'text-gray-500 hover:text-gray-300'}`} onClick={() => { setPlayMode('Human vs AI'); setAtkModel(null); }}>Human vs AI</button>
         </div>
+        
+        <select value={gameMode} onChange={e => setGameMode(e.target.value)} className="bg-[#111] border border-gray-800 text-white text-xs px-4 py-2 outline-none font-bold uppercase tracking-widest cursor-pointer w-full max-w-xs">
+          <option value="word_guessing">Word-Guessing Game</option>
+          <option value="debate" disabled>Debate Game (Coming Soon)</option>
+          <option value="survival" disabled>Survival Mode (Coming Soon)</option>
+        </select>
       </div>
 
       <div className="flex-1 max-w-7xl mx-auto w-full flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-0 relative">
-        <div className={`w-full lg:w-1/2 lg:pr-12 flex flex-col items-center ${mode === 'Human vs AI' ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
+        <div className={`w-full lg:w-1/2 lg:pr-12 flex flex-col items-center ${playMode === 'Human vs AI' ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
           <h2 className="text-2xl font-black text-white italic uppercase tracking-[0.2em] mb-4 text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Attacker</h2>
-          {mode === 'Human vs AI' ? (
+          {playMode === 'Human vs AI' ? (
              <div className="w-full flex flex-col items-center justify-center h-48 border border-model-red/30 bg-model-red/5 p-8 text-center"><HumanSVG className="w-16 h-16 mb-4" /><p className="text-white font-bold uppercase tracking-widest text-sm">Human Override</p></div>
           ) : (
             <div className="grid grid-cols-3 gap-3 w-full max-w-md mx-auto">
@@ -245,16 +273,26 @@ const ArenaSection = ({ authState, joinQueue }) => {
         </div>
       </div>
 
-      <div className="mt-8 flex justify-center pb-8">
-        <motion.button whileHover={canQueue ? { scale: 1.05 } : {}} whileTap={canQueue ? { scale: 0.95 } : {}} disabled={!canQueue} onClick={handleQueue} className={`px-16 py-4 font-black uppercase tracking-[0.3em] text-sm transition-all duration-300 ${canQueue ? 'bg-model-red text-white hover:bg-white hover:text-model-red shadow-[0_0_40px_rgba(220,38,38,0.5)]' : 'bg-gray-900 border border-gray-800 text-gray-600 cursor-not-allowed'}`}>
-          {canQueue ? 'Lock In' : 'Select Fighters'}
+      <div className="mt-8 flex flex-col justify-center items-center pb-8 gap-6 w-full max-w-md mx-auto">
+        <div className="flex w-full flex-col gap-2 relative z-20">
+          <label className="text-xs uppercase font-bold tracking-widest text-gray-500 text-center">Target Word Config</label>
+          <div className="flex w-full gap-2">
+            <input type="text" value={targetWord} onChange={e => setTargetWord(e.target.value)} placeholder="e.g. OBLIVION" className="flex-1 bg-[#111] border border-gray-800 px-4 py-3 text-white focus:outline-none focus:border-model-red font-mono transition-colors" />
+            <button onClick={handleRandomWord} className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 font-bold text-xs uppercase tracking-wider transition-colors border border-gray-600">
+              Random Word
+            </button>
+          </div>
+        </div>
+
+        <motion.button whileHover={canQueue ? { scale: 1.05 } : {}} whileTap={canQueue ? { scale: 0.95 } : {}} disabled={!canQueue} onClick={handleQueue} className={`px-16 py-4 font-black uppercase tracking-[0.3em] text-sm transition-all duration-300 w-full sm:w-auto ${canQueue ? 'bg-model-red text-white hover:bg-white hover:text-model-red shadow-[0_0_40px_rgba(220,38,38,0.5)]' : 'bg-gray-900 border border-gray-800 text-gray-600 cursor-not-allowed'}`}>
+          {canQueue ? 'Fight!' : 'Select Fighters'}
         </motion.button>
       </div>
     </section>
   );
 };
 
-const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo }) => {
+const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo, setBattleState }) => {
   const messagesEndRef = useRef(null);
   const [humanInput, setHumanInput] = useState('');
   const [isChatExpanded, setIsChatExpanded] = useState(false);
@@ -262,12 +300,18 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
   // Animation states: 'idle', 'clashing', 'retreat', 'critical', 'ko-atk', 'ko-def'
   const [fightAnimState, setFightAnimState] = useState('idle');
   const [healthFlash, setHealthFlash] = useState(false);
+  
+  const [animMode, setAnimMode] = useState('kinetic');
+  const [flyingMsg, setFlyingMsg] = useState(null);
+  const [flyingMsgIndex, setFlyingMsgIndex] = useState(0);
+
+  const [isWaitingForServer, setIsWaitingForServer] = useState(false);
 
   useEffect(() => { 
     if(isChatExpanded) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); 
   }, [battleState.messages, isChatExpanded]);
 
-  // Simulate health drops
+  // Simulate health drops only when resources actually change
   useEffect(() => {
     if (battleState.attackerResourcesRemaining < 100) {
       setHealthFlash(true);
@@ -277,9 +321,38 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
 
   const handleSend = () => {
     if (!humanInput.trim()) return;
+    
+    // TODO: send user message to backend and await AI response
+    // POST { prompt: humanInput, model: battleState.defenderModel, history: battleState.messages } to /api/turn — await { response } from backend
     apiSendMessage(1, humanInput);
+    
+    setBattleState(prev => ({
+      ...prev,
+      messages: [...prev.messages, { id: Date.now(), role: 'attacker', text: humanInput, tokens: Math.floor(humanInput.length / 4) }]
+    }));
+    
     setHumanInput('');
+    setIsWaitingForServer(true); // TODO: agent acts only when backend pushes a response here
     triggerClashAnimation();
+    
+    // Mocking the server response to remove the waiting state just for the demo
+    setTimeout(() => setIsWaitingForServer(false), 2000);
+  };
+
+  const launchNextFlyingMsg = () => {
+    if (flyingMsg) return;
+    const msgTemplate = FLYING_PLACEHOLDERS[flyingMsgIndex % FLYING_PLACEHOLDERS.length];
+    setFlyingMsg({ ...msgTemplate, id: Date.now() });
+    
+    // Simulate network delay / animation time
+    setTimeout(() => {
+      setBattleState(prev => ({
+        ...prev,
+        messages: [...prev.messages, { ...msgTemplate, id: Date.now(), tokens: msgTemplate.text.length }]
+      }));
+      setFlyingMsg(null);
+      setFlyingMsgIndex(i => i + 1);
+    }, 4000);
   };
 
   const triggerClashAnimation = () => {
@@ -336,10 +409,31 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {flyingMsg && animMode === 'flying' && (
+          <motion.div
+            initial={{ x: flyingMsg.role === 'attacker' ? -500 : 500, opacity: 0, y: 0, scale: 0.8 }}
+            animate={{ x: flyingMsg.role === 'attacker' ? 500 : -500, opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 4, ease: "linear" }}
+            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 max-w-sm p-4 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] border-2 pointer-events-none ${flyingMsg.role === 'attacker' ? 'bg-[#1a0505] border-model-red text-white' : 'bg-[#111] border-gray-500 text-gray-300'}`}
+          >
+            <div className={`text-[10px] uppercase font-bold tracking-widest mb-2 opacity-50 ${flyingMsg.role === 'attacker' ? 'text-model-red text-left' : 'text-gray-400 text-right'}`}>{flyingMsg.role}</div>
+            <p className="text-sm font-medium leading-relaxed drop-shadow-md">{flyingMsg.text}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="absolute top-4 right-4 flex gap-2 z-40 opacity-20 hover:opacity-100 transition-opacity flex-col">
-        <button className="bg-model-gold-dark text-white text-xs px-2 py-1 font-bold uppercase tracking-widest border border-model-gold" onClick={handleVDEmo}>Demo Win (Atk)</button>
+        <select value={animMode} onChange={e => setAnimMode(e.target.value)} className="bg-gray-800 text-white text-xs px-2 py-1 outline-none mb-1 font-bold uppercase border border-gray-600">
+          <option value="kinetic">Standard</option>
+          <option value="flying">Flying Dialogue</option>
+        </select>
+        <button className="bg-model-gold-dark text-white text-xs px-2 py-1 font-bold uppercase tracking-widest border border-model-gold shadow-[0_0_10px_rgba(251,191,36,0.3)]" onClick={handleVDEmo}>Demo Win (Atk)</button>
         <button className="bg-gray-800 border border-gray-600 text-white text-xs px-2 py-1 font-bold uppercase tracking-widest" onClick={handleLDemo}>Demo Lose (Def)</button>
-        <button className="bg-gray-800 border border-gray-600 text-white text-xs px-2 py-1 font-bold uppercase tracking-widest" onClick={triggerClashAnimation}>Manual Clash</button>
+        <button className="bg-gray-800 border border-gray-600 text-white text-xs px-2 py-1 font-bold uppercase tracking-widest" onClick={animMode === 'flying' ? launchNextFlyingMsg : triggerClashAnimation}>
+          {animMode === 'flying' ? 'Launch Msg' : 'Manual Clash'}
+        </button>
       </div>
 
       <div className={`w-full max-w-6xl mx-auto flex flex-col relative z-20 transition-all duration-500 ease-in-out ${isChatExpanded ? 'h-[90vh]' : 'h-auto items-center justify-center my-auto'}`}>
@@ -374,7 +468,7 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
             </AnimatePresence>
 
             <div className={`px-6 py-3 bg-gradient-to-b from-model-red to-model-blood border-2 border-[#111] shadow-[0_5px_15px_rgba(220,38,38,0.4)] text-center skew-x-[-12deg] z-10 transition-all ${fightAnimState === 'critical' ? 'scale-110 drop-shadow-[0_0_20px_white]' : ''}`}>
-              <span className="text-[10px] text-white/70 uppercase font-black tracking-widest block skew-x-[12deg] mb-1">Secret Target</span>
+              <span className="text-[10px] text-white/70 uppercase font-black tracking-widest block skew-x-[12deg] mb-1">Target Word</span>
               <span className={`font-black text-white tracking-[0.2em] font-mono skew-x-[12deg] drop-shadow-md ${isChatExpanded ? 'text-2xl' : 'text-4xl'}`}>{battleState.secretWord}</span>
             </div>
           </div>
@@ -412,7 +506,7 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
             </motion.div>
           )}
 
-          {/* Expanded State Feed */}
+              {/* Expanded State Feed */}
           {isChatExpanded && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="w-full flex-1 flex flex-col bg-[#050505] border border-gray-900 shadow-[inset_0_0_50px_rgba(0,0,0,0.8)] mb-4">
               <div className="flex justify-between items-center px-4 py-2 border-b border-gray-900 bg-black">
@@ -422,7 +516,7 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-6 max-h-[50vh]">
+              <div className="flex-1 overflow-y-auto p-6 max-h-[50vh] relative">
                 <AnimatePresence initial={false}>
                   {battleState.messages.map((msg, idx) => {
                     const isAtk = msg.role === 'attacker';
@@ -446,8 +540,14 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
                 <div ref={messagesEndRef} />
               </div>
 
+              {isWaitingForServer && (
+                <div className="w-full bg-[#1a1a1a] p-2 text-center text-xs font-black uppercase tracking-[0.2em] text-gray-400 animate-pulse border-t border-gray-800 flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div> Waiting for server...
+                </div>
+              )}
+
               {/* Console Input */}
-              {battleState.mode === 'Human vs AI' && authState.isLoggedIn ? (
+              {battleState.playMode === 'Human vs AI' && authState.isLoggedIn ? (
                 <div className="flex items-center gap-3 bg-[#0a0a0a] p-3 border-t border-gray-800">
                   <span className="text-model-red font-mono font-bold pl-2">&gt;</span>
                   <input type="text" value={humanInput} onChange={(e) => setHumanInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="INPUT DIRECTIVE..." className="flex-1 bg-transparent px-2 py-2 text-white placeholder-gray-600 font-mono text-sm focus:outline-none" />
@@ -587,15 +687,15 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
             </div>
           )}
           <div>
-            <label className="block text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold mb-2">Comms Channel (Email)</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-[#111] border border-gray-800 px-4 py-3 text-white focus:outline-none focus:border-model-red font-mono transition-colors" required />
+            <label className="block text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold mb-2">Username</label>
+            <input type="text" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-[#111] border border-gray-800 px-4 py-3 text-white focus:outline-none focus:border-model-red font-mono transition-colors" required />
           </div>
           <div>
-            <label className="block text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold mb-2">Access Code</label>
+            <label className="block text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold mb-2">Password</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-[#111] border border-gray-800 px-4 py-3 text-white focus:outline-none focus:border-model-red font-mono transition-colors" required />
           </div>
           <button type="submit" className="w-full bg-model-red hover:bg-white hover:text-model-red text-white font-black uppercase tracking-[0.3em] py-4 mt-8 transition-colors shadow-[0_0_20px_rgba(220,38,38,0.3)]">
-            {tab === 'login' ? 'Enter Pit' : 'Register Identity'}
+            {tab === 'login' ? 'Log In' : 'Register Identity'}
           </button>
         </form>
       </motion.div>
@@ -688,13 +788,25 @@ export default function App() {
   const [activeSection, setActiveSection] = useState(0);
   const containerRef = useRef(null);
 
+  const [theme, setTheme] = useState('dark');
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    if (newTheme === 'light') {
+      document.body.classList.add('theme-light');
+    } else {
+      document.body.classList.remove('theme-light');
+    }
+  };
+
   const [authState, setAuthState] = useState({ isLoggedIn: false, username: null });
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   
-  const [queueState, setQueueState] = useState({ entries: INITIAL_QUEUE, myPosition: null });
+  const [queueState, setQueueState] = useState({ entries: [], myPosition: null });
   const [battleState, setBattleState] = useState({
-    isActive: true, attackerModel: 'claude', defenderModel: 'chatgpt', secretWord: 'OBLIVION',
-    messages: INITIAL_BATTLE_MESSAGES, attackerResourcesRemaining: 100, mode: 'AI vs AI', winner: null
+    isActive: false, attackerModel: 'claude', defenderModel: 'chatgpt', secretWord: 'OBLIVION',
+    messages: INITIAL_BATTLE_MESSAGES, attackerResourcesRemaining: 100, playMode: 'AI vs AI', gameMode: 'word_guessing', winner: null
   });
   
   const [scoreboardState] = useState({
@@ -714,42 +826,46 @@ export default function App() {
     return () => el && el.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Demo health drain interval
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setBattleState(prev => {
-        if(prev.attackerResourcesRemaining <= 0 || prev.winner) return prev;
-        return { ...prev, attackerResourcesRemaining: Math.max(0, prev.attackerResourcesRemaining - 3) };
-      });
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
   const scrollTo = (index) => {
     if (containerRef.current) {
       containerRef.current.scrollTo({ top: index * window.innerHeight, behavior: 'smooth' });
     }
   };
 
-  const handleJoinQueue = (atk, def, mode) => {
-    setQueueState(prev => ({ ...prev, myPosition: prev.entries.length + 1 }));
+  const handleStartBattle = (atk, def, playMode, gameMode, word = 'OBLIVION') => {
+    if (battleState.isActive) {
+      alert("A battle is already in progress. Please wait for it to finish.");
+      return;
+    }
+    setBattleState(prev => ({
+      ...prev,
+      isActive: true,
+      attackerModel: atk,
+      defenderModel: def,
+      secretWord: word,
+      playMode: playMode,
+      gameMode: gameMode,
+      messages: [],
+      attackerResourcesRemaining: 100,
+      winner: null
+    }));
     scrollTo(2); // Jump to live battle now since queue is gone
   };
 
-  const demoWin = () => setBattleState(prev => ({ ...prev, winner: 'attacker' }));
-  const demoLose = () => setBattleState(prev => ({ ...prev, attackerResourcesRemaining: 0, winner: 'defender' }));
+  const demoWin = () => setBattleState(prev => ({ ...prev, winner: 'attacker', isActive: false }));
+  const demoLose = () => setBattleState(prev => ({ ...prev, attackerResourcesRemaining: 0, winner: 'defender', isActive: false }));
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#0a0a0a] text-gray-100 flex flex-col font-sans selection:bg-model-red/30 selection:text-white relative">
       <EmberParticles /> {/* GLOBAL PARTICLES NOW */}
-      <Navbar authState={authState} openLogin={() => setIsLoginOpen(true)} scrollTo={scrollTo} queueState={queueState} />
+      <Navbar authState={authState} openLogin={() => setIsLoginOpen(true)} scrollTo={scrollTo} queueState={queueState} theme={theme} toggleTheme={toggleTheme} />
       <DotNavigation activeSection={activeSection} scrollTo={scrollTo} />
       
       <main ref={containerRef} className="snap-container flex-1 mt-16 relative z-10">
         <HeroSection scrollTo={scrollTo} />
-        <ArenaSection authState={authState} joinQueue={handleJoinQueue} />
+        <ArenaSection authState={authState} startBattle={handleStartBattle} openLogin={() => setIsLoginOpen(true)} />
         {/* QueueSection REMOVED */}
-        <LiveBattleSection battleState={battleState} authState={authState} onVictoryDemo={demoWin} onDefeatDemo={demoLose} />
+        <LiveBattleSection battleState={battleState} authState={authState} onVictoryDemo={demoWin} onDefeatDemo={demoLose} setBattleState={setBattleState} />
         <ScoreboardSection scoreboardState={scoreboardState} />
       </main>
 

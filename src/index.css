@@ -4,9 +4,22 @@
 
 @layer base {
   body {
-    @apply bg-[#0a0a0a] text-gray-100 font-sans antialiased overflow-hidden;
+    @apply bg-[#0a0a0a] text-gray-100 font-sans antialiased overflow-hidden transition-all duration-300;
   }
 }
+
+/* Light Mode Override */
+body.theme-light {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: #f5f5f5; /* Force a lighter base if inherited bg isn't crisp */
+}
+
+body.theme-light img,
+body.theme-light svg,
+body.theme-light canvas {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 
 /* Snap Scroll Architecture */
 .snap-container {
