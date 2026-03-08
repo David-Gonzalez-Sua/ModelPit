@@ -27,13 +27,10 @@ Do not wrap the return format in backticks or anything else. Keep the data in pu
 """
         )
         super().__init__(agent_1, agent_2, Games.TICTACTOE.value, config)
-        self.agent_1 = agent_1
-        self.agent_2 = agent_2
         self.board = [["-" for _ in range(3)] for _ in range(3)]
         self.last_move = None
         self.marks = {agent_1:'X', agent_2:'O'}
 
-    # Display labeled board
     def board_to_string(self):
         board_lines = ["  0 1 2"]
         for idx, row in enumerate(self.board):
@@ -43,7 +40,7 @@ Do not wrap the return format in backticks or anything else. Keep the data in pu
     def get_state(self):
         return self.board_to_string()
 
-    def get_prompt(self) -> str:
+    def get_prompt(self, role=None) -> str:
         available_moves = []
         for r in range(3):
             for c in range(3):
@@ -75,8 +72,8 @@ Return ONLY JSON in this format:
 {self.config.return_format}
 """
 
-    # Update move
-    def update(self, state):
+    def update(self, role, state):
+        # We ignore role for TicTacToe as it follows self.current_agent
         row = state["row"]
         col = state["col"]
 
@@ -88,26 +85,30 @@ Return ONLY JSON in this format:
         mark = self.marks[self.current_agent]
         self.board[row][col] = mark
         self.last_move = mark
+        
+        self.messages.append({
+            "role": f"Agent {1 if self.current_agent == self.agent_1 else 2} ({mark})",
+            "text": f"Placed {mark} at ({row}, {col}).",
+            "analysis": state.get("analysis", ""),
+            "reason": state.get("reason", "")
+        })
 
-    # Check for draw
+        status = self.check_win()
+        if status:
+            self.running = False
+            if status == GameStates.Agent1: self.winner = "agent1"
+            elif status == GameStates.Agent2: self.winner = "agent2"
+            else: self.winner = "draw"
+
     def check_draw(self):
         return all(cell != "-" for row in self.board for cell in row)
 
-    # Check for winner
     def check_win(self):
         b = self.board
         lines = [
-            # Rows
-            [b[0][0], b[0][1], b[0][2]],
-            [b[1][0], b[1][1], b[1][2]],
-            [b[2][0], b[2][1], b[2][2]],
-            # Columns
-            [b[0][0], b[1][0], b[2][0]],
-            [b[0][1], b[1][1], b[2][1]],
-            [b[0][2], b[1][2], b[2][2]],
-            # Diagonals
-            [b[0][0], b[1][1], b[2][2]],
-            [b[0][2], b[1][1], b[2][0]],
+            [b[0][0], b[0][1], b[0][2]], [b[1][0], b[1][1], b[1][2]], [b[2][0], b[2][1], b[2][2]],
+            [b[0][0], b[1][0], b[2][0]], [b[0][1], b[1][1], b[2][1]], [b[0][2], b[1][2], b[2][2]],
+            [b[0][0], b[1][1], b[2][2]], [b[0][2], b[1][1], b[2][0]],
         ]
         for line in lines:
             if line[0] != "-" and line[0] == line[1] == line[2]:

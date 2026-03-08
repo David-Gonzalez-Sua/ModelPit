@@ -2,7 +2,7 @@ from enum import Enum
 
 class Games(Enum):
     TICTACTOE = "tictactoe"
-    ROCKPAPERSCISSORS = "rockpaperscissors"
+    ROCKPAPERSCISSORS = "rockpapsci"
 
 class GameStates(Enum):
     Agent1 = 'agent1'
@@ -24,6 +24,9 @@ class Game:
         self.config = config
         self.running = True
         self.current_agent = agent_1  # Start with Agent 1
+        self.messages = []
+        self.resources = 100
+        self.winner = None
 
-    def get_prompt(self) -> str:
+    def get_prompt(self, role=None) -> str:
         raise NotImplementedError("Each Game subclass must implement 'get_prompt()'")
