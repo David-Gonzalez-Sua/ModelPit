@@ -166,6 +166,9 @@
             const [resources, setResources] = useState(100);
             const [showLiveFeed, setShowLiveFeed] = useState(true);
             const [secretWord, setSecretWord] = useState("");
+            const [customSecretWord, setCustomSecretWord] = useState("OBLIVION");
+            const battleIdRef = useRef(null);
+            useEffect(() => { battleIdRef.current = battleId; }, [battleId]);
             
             
             const messagesEndRef = useRef(null);
@@ -250,6 +253,7 @@
                 setResources(100);
                 setSecretWord("");
                 setAutoPlay(false);
+                setLoading(false);
             };
     
             const startBattle = async () => {
@@ -269,7 +273,8 @@
                             defender: agent2,
                             defenderSubModel: (agent2 === "ollama" || agent2 === "gemini") ? agent2SubModel : null,
                             playMode: "ai_vs_ai",
-                            gameMode: gameMode
+                            gameMode: gameMode,
+                            targetWord: gameMode === "word_guessing" ? (customSecretWord || "OBLIVION") : null
                         })
                     });
                     const data = await res.json();
@@ -289,10 +294,8 @@
                         method: "POST"
                     });
                     const data = await res.json();
-                    if (data.status === "stopped") {
-                        setFinished(true);
-                        setWinner("stopped");
-                        setAutoPlay(false);
+                    if (data.status === "stopped" || res.ok) {
+                        resetUI();
                     }
                 } catch (err) {
                     console.error("Error stopping battle:", err);
@@ -302,6 +305,7 @@
 
             const takeTurn = async () => {
                 if (!battleId || finished || loading) return;
+                const currentBattleId = battleId;
                 setLoading(true);
                 
                 try {
@@ -309,6 +313,7 @@
                         method: "POST"
                     });
                     const data = await res.json();
+                    if (currentBattleId !== battleIdRef.current) return;
                     if (data.error) {
                         throw new Error(data.error);
                     }
@@ -441,6 +446,20 @@
                                         {GAMES.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                                     </select>
                                 </div>
+                                {gameMode === 'word_guessing' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-400 mb-1">Secret Word (Defender's Secret)</label>
+                                        <input 
+                                            type="text"
+                                            value={customSecretWord}
+                                            onChange={(e) => setCustomSecretWord(e.target.value.toUpperCase())}
+                                            disabled={battleId && !finished}
+                                            placeholder="Enter secret word..."
+                                            className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                                        />
+                                    </div>
+                                )}
+
 
                                 <button 
                                     onClick={startBattle}

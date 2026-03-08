@@ -34,15 +34,15 @@ class StartBattleRequest(BaseModel):
     targetWord: Optional[str] = "OBLIVION"
 
 @app.get("/api/ollama/models")
-async def get_ollama_models():
+def get_ollama_models():
     return {"models": model_api.list_ollama_models()}
 
 @app.get("/api/gemini/models")
-async def get_gemini_models():
+def get_gemini_models():
     return {"models": model_api.get_gemini_models()}
 
 @app.post("/api/battle/start")
-async def start_battle(req: StartBattleRequest):
+def start_battle(req: StartBattleRequest):
     # Check if any battle is currently running
     for b_id, b_data in battles.items():
         if b_data["game"].running:
@@ -79,7 +79,7 @@ async def start_battle(req: StartBattleRequest):
     return {"battleId": battle_id, "secretWord": getattr(game, 'secret_word', None)}
 
 @app.post("/api/battle/turn")
-async def take_turn(battle_id: str):
+def take_turn(battle_id: str):
     if battle_id not in battles:
         raise HTTPException(status_code=404, detail="Battle not found")
         
@@ -168,16 +168,14 @@ async def get_battle(battle_id: str):
 
 
 @app.post("/api/battle/stop")
-async def stop_battle(battle_id: str):
+def stop_battle(battle_id: str):
     if battle_id not in battles:
         raise HTTPException(status_code=404, detail="Battle not found")
     
     battle = battles[battle_id]
     game = battle["game"]
     game.running = False
-    if not game.winner:
-        game.winner = "stopped"
-    
+    battles.clear()
     return {"status": "stopped", "battleId": battle_id}
 
 # Serve static files
