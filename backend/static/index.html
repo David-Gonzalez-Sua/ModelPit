@@ -98,7 +98,7 @@
         };
 
         const getModelIcon = (model) => {
-            switch(model?.toLowerCase()) {
+            switch (model?.toLowerCase()) {
                 case 'chatgpt': return '🤖';
                 case 'claude': return '🧠';
                 case 'gemini': return '✨';
@@ -535,12 +535,22 @@
                             {/* Game State Visualization */}
                             <div className="bg-slate-800 p-6 rounded-xl shadow-lg">
                                 <h2 className="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">Arena</h2>
-                                {gameState ? (
+                                {gameMode === 'word_guessing' ? (
+                                    <div className="flex flex-col items-center">
+                                        <div className="mb-4 w-full">
+                                            <WordGuessingArena messages={messages} resources={resources} secretWord={secretWord} agent1={agent1} agent2={agent2} />
+                                        </div>
+                                        {finished && (
+                                            <div className="text-2xl font-bold text-yellow-400 animate-bounce">
+                                                {winner === 'draw' ? 'DRAW!' : `WINNER: ${winner.toUpperCase()}!`}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : gameState ? (
                                     <div className="flex flex-col items-center">
                                         <div className="mb-4 w-full">
                                             {gameMode === 'tictactoe' && <TicTacToeBoard state={gameState} finished={finished} winner={winner} />}
                                             {gameMode === 'rockpapsci' && <RockPaperScissorsBoard state={gameState} />}
-                                            {gameMode === 'word_guessing' && <WordGuessingArena messages={messages} resources={resources} secretWord={secretWord} agent1={agent1} agent2={agent2} />}
                                             {(!['tictactoe', 'rockpapsci', 'word_guessing'].includes(gameMode)) && (
                                                 <div className="game-board text-center">{gameState}</div>
                                             )}
