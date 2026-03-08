@@ -170,8 +170,8 @@ def create_prompt(game: TicTacToe):
 
 
 
-agent_1 = Agent(Model.GPT)
-agent_2 = Agent(Model.CLAUDE)
+agent_1 = Agent(Model.OLLAMA, model_name="rnj-1:8b")
+agent_2 = Agent(Model.OLLAMA, model_name="rnj-1:8b")
 game = TicTacToe(agent_1, agent_2)
 
 while game.running:
