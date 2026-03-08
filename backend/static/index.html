@@ -97,12 +97,36 @@
             );
         };
 
-        const WordGuessingArena = ({ messages, resources, secretWord }) => {
-            const arenaMessagesEndRef = useRef(null);
+        const getModelIcon = (model) => {
+            switch(model?.toLowerCase()) {
+                case 'chatgpt': return '🤖';
+                case 'claude': return '🧠';
+                case 'gemini': return '✨';
+                case 'deepseek': return '🐳';
+                case 'kimi': return '🌙';
+                case 'ollama': return '🦙';
+                case 'human': return '👤';
+                default: return '👾';
+            }
+        };
+
+        const WordGuessingArena = ({ messages, resources, secretWord, agent1, agent2 }) => {
+            const [animatingMsg, setAnimatingMsg] = useState(null);
 
             useEffect(() => {
-                arenaMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+                if (messages.length > 0) {
+                    const lastMsg = messages[messages.length - 1];
+                    setAnimatingMsg(lastMsg);
+                    const timer = setTimeout(() => {
+                        setAnimatingMsg(null);
+                    }, 1800);
+                    return () => clearTimeout(timer);
+                } else {
+                    setAnimatingMsg(null);
+                }
             }, [messages]);
+
+            const isAttackerMsg = (msg) => msg?.role === "attacker" || msg?.role?.includes("1");
 
             return (
                 <div className="relative w-full flex flex-col h-[400px] bg-slate-900/50 rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
@@ -118,33 +142,56 @@
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900/10 custom-scrollbar">
-                        {messages.length === 0 && (
-                            <div className="h-full flex items-center justify-center text-slate-500 italic text-sm">
+                    <div className="flex-1 relative flex items-center justify-between px-16 bg-slate-900/10 overflow-hidden">
+                        {/* Agent 1 (Attacker) */}
+                        <div className="flex flex-col items-center z-10 w-24">
+                            <div className="text-6xl mb-2 drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]">{getModelIcon(agent1)}</div>
+                            <div className="text-[10px] font-bold text-blue-400 bg-slate-800 px-2 py-1 rounded border border-blue-500/30 uppercase tracking-widest w-full text-center truncate">{agent1 || "Agent 1"}</div>
+                        </div>
+
+                        {/* Animating Message */}
+                        {animatingMsg && (
+                            <div
+                                key={messages.length} // Force re-animation when a new message arrives
+                                className={"absolute top-1/2 -translate-y-1/2 max-w-[200px] p-3 rounded-xl shadow-xl border text-xs z-20 overflow-hidden text-ellipsis " +
+                                    (isAttackerMsg(animatingMsg)
+                                        ? "bg-blue-600 border-blue-400 text-white animate-flyRight"
+                                        : "bg-purple-600 border-purple-400 text-white animate-flyLeft"
+                                    )}
+                            >
+                                <div className="font-bold opacity-75 text-[9px] uppercase tracking-widest mb-1.5 border-b border-white/20 pb-0.5">
+                                    {animatingMsg.role} ({isAttackerMsg(animatingMsg) ? 'Attacker' : 'Defender'})
+                                </div>
+                                <div className="line-clamp-4 font-mono leading-relaxed">
+                                    "{animatingMsg.text}"
+                                </div>
+                            </div>
+                        )}
+
+                        {!animatingMsg && messages.length === 0 && (
+                            <div className="absolute inset-0 flex items-center justify-center text-slate-500 italic text-sm z-0">
                                 Waiting for battle to begin...
                             </div>
                         )}
-                        {messages.map((msg, idx) => {
-                            const isAtk = msg.role === "attacker" || msg.role.includes("1");
-                            return (
-                                <div key={idx} className={"flex " + (isAtk ? "justify-start" : "justify-end")}>
-                                    <div className={"max-w-[85%] rounded-xl p-3 shadow-md " + (
-                                        isAtk
-                                            ? "bg-blue-600/10 border border-blue-500/20 text-blue-50"
-                                            : "bg-purple-600/10 border border-purple-500/20 text-purple-50"
-                                    )}>
-                                        <div className={"text-[9px] font-black uppercase tracking-widest mb-1 opacity-40 " + (isAtk ? "text-blue-400" : "text-purple-400 text-right")}>
-                                            {msg.role}
-                                        </div>
-                                        <div className={"text-xs leading-relaxed " + (!isAtk ? "text-right" : "")}>{msg.text}</div>
-                                    </div>
+                        {!animatingMsg && messages.length > 0 && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-700 font-bold uppercase tracking-widest text-sm z-0">
+                                <div>Awaiting next move</div>
+                                <div className="flex space-x-1 mt-2">
+                                    <div className="w-1.5 h-1.5 bg-slate-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                    <div className="w-1.5 h-1.5 bg-slate-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                    <div className="w-1.5 h-1.5 bg-slate-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                                 </div>
-                            );
-                        })}
-                        <div ref={arenaMessagesEndRef} />
+                            </div>
+                        )}
+
+                        {/* Agent 2 (Defender) */}
+                        <div className="flex flex-col items-center z-10 w-24">
+                            <div className="text-6xl mb-2 drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]">{getModelIcon(agent2)}</div>
+                            <div className="text-[10px] font-bold text-purple-400 bg-slate-800 px-2 py-1 rounded border border-purple-500/30 uppercase tracking-widest w-full text-center truncate">{agent2 || "Agent 2"}</div>
+                        </div>
                     </div>
 
-                    <div className="p-3 bg-slate-800/80 border-t border-slate-700">
+                    <div className="p-3 bg-slate-800/80 border-t border-slate-700 z-30">
                         <div className="flex justify-between items-center mb-1.5">
                             <span className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Attacker Resources</span>
                             <span className={"text-xs font-mono font-bold " + (resources > 30 ? "text-slate-300" : "text-red-500 animate-pulse")}>{Math.round(resources / 100)}%</span>
@@ -161,9 +208,24 @@
                         </div>
                     </div>
                     <style>{`
-                        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+                        @keyframes flyRight {
+                            0% { left: 15%; opacity: 0; transform: translateY(-50%) scale(0.5); }
+                            10% { opacity: 1; transform: translateY(-50%) scale(1); }
+                            80% { left: 65%; opacity: 1; transform: translateY(-50%) scale(1); }
+                            100% { left: 75%; opacity: 0; transform: translateY(-50%) scale(0.5); }
+                        }
+                        @keyframes flyLeft {
+                            0% { right: 15%; opacity: 0; transform: translateY(-50%) scale(0.5); }
+                            10% { opacity: 1; transform: translateY(-50%) scale(1); }
+                            80% { right: 65%; opacity: 1; transform: translateY(-50%) scale(1); }
+                            100% { right: 75%; opacity: 0; transform: translateY(-50%) scale(0.5); }
+                        }
+                        .animate-flyRight {
+                            animation: flyRight 1.8s forwards ease-in-out;
+                        }
+                        .animate-flyLeft {
+                            animation: flyLeft 1.8s forwards ease-in-out;
+                        }
                     `}</style>
                 </div>
             );
@@ -478,7 +540,7 @@
                                         <div className="mb-4 w-full">
                                             {gameMode === 'tictactoe' && <TicTacToeBoard state={gameState} finished={finished} winner={winner} />}
                                             {gameMode === 'rockpapsci' && <RockPaperScissorsBoard state={gameState} />}
-                                            {gameMode === 'word_guessing' && <WordGuessingArena messages={messages} resources={resources} secretWord={secretWord} />}
+                                            {gameMode === 'word_guessing' && <WordGuessingArena messages={messages} resources={resources} secretWord={secretWord} agent1={agent1} agent2={agent2} />}
                                             {(!['tictactoe', 'rockpapsci', 'word_guessing'].includes(gameMode)) && (
                                                 <div className="game-board text-center">{gameState}</div>
                                             )}
