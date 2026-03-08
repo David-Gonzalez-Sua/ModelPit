@@ -25,7 +25,7 @@ class Game:
         self.running = True
         self.current_agent = agent_1  # Start with Agent 1
         self.messages = []
-        self.resources = 100
+        self.resources = 10000
         self.winner = None
 
     def get_prompt(self, role=None) -> str:

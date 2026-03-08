@@ -3,6 +3,9 @@ from enum import Enum
 import json
 import api_py as model_api
 
+#import tiktoken
+
+
 class Model(Enum):
     GPT = "chatgpt"
     CLAUDE = "claude"
@@ -57,7 +60,9 @@ class Agent:
                     clean_result = clean_result.split("```")[1].split("```")[0].strip()
                 
                 parsed = json.loads(clean_result)
-                return parsed
+
+                chars_used = len(result)
+                return parsed, chars_used
             except Exception as e:
                 last_error = str(e)
                 print(f"Attempt {attempt + 1} failed for {self.model.value}: {last_error}")

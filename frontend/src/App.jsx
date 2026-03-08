@@ -84,7 +84,7 @@ const fireConfetti = (isAttackerWin) => {
   const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
   const colors = isAttackerWin ? ['#dc2626', '#fbbf24', '#ffffff'] : ['#cccccc', '#ffffff', '#666666'];
 
-  const interval = setInterval(function() {
+  const interval = setInterval(function () {
     const timeLeft = animationEnd - Date.now();
     if (timeLeft <= 0) return clearInterval(interval);
     const particleCount = 50 * (timeLeft / duration);
@@ -140,7 +140,7 @@ const Navbar = ({ authState, openLogin, scrollTo, queueState, theme, toggleTheme
             </span>
           </div>
         )}
-        
+
         <button onClick={toggleTheme} className="text-gray-400 hover:text-white transition-colors flex items-center justify-center">
           {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
@@ -162,7 +162,7 @@ const Navbar = ({ authState, openLogin, scrollTo, queueState, theme, toggleTheme
 const HeroSection = ({ scrollTo }) => (
   <section className="snap-section flex flex-col items-center justify-center pt-16 px-4 text-center bg-transparent">
     <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         whileInView={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
@@ -176,7 +176,7 @@ const HeroSection = ({ scrollTo }) => (
       <p className="text-xl md:text-2xl text-gray-400 max-w-2xl mb-12 font-medium">
         Extract the secret. <span className="text-model-red font-bold typing-cursor">Defend your logic.</span>
       </p>
-      <motion.button 
+      <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => scrollTo(1)}
@@ -192,7 +192,7 @@ const HeroSection = ({ scrollTo }) => (
 const FighterCard = ({ model, isSelected, onSelect, role }) => {
   const { Logo } = model;
   return (
-    <motion.div 
+    <motion.div
       whileHover={{ scale: 1.03, y: -5 }}
       whileTap={{ scale: 0.98 }}
       onClick={() => onSelect(model.id)}
@@ -225,7 +225,7 @@ const ArenaSection = ({ authState, startBattle, openLogin }) => {
     // TODO: replace with server-generated random word
     setTargetWord('Elephant');
   };
-  
+
   const canQueue = playMode === 'AI vs AI' ? (atkModel && defModel) : defModel;
 
   const handleQueue = () => {
@@ -241,7 +241,7 @@ const ArenaSection = ({ authState, startBattle, openLogin }) => {
           <button className={`px-4 sm:px-8 py-2 font-black text-xs uppercase tracking-widest transition-all ${playMode === 'AI vs AI' ? 'bg-model-red text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'text-gray-500 hover:text-gray-300'}`} onClick={() => { setPlayMode('AI vs AI'); setAtkModel(null); }}>AI vs AI</button>
           <button className={`px-4 sm:px-8 py-2 font-black text-xs uppercase tracking-widest transition-all ${playMode === 'Human vs AI' ? 'bg-model-red text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'text-gray-500 hover:text-gray-300'}`} onClick={() => { setPlayMode('Human vs AI'); setAtkModel(null); }}>Human vs AI</button>
         </div>
-        
+
         <select value={gameMode} onChange={e => setGameMode(e.target.value)} className="bg-[#111] border border-gray-800 text-white text-xs px-4 py-2 outline-none font-bold uppercase tracking-widest cursor-pointer w-full max-w-xs">
           <option value="word_guessing">Word-Guessing Game</option>
           <option value="debate" disabled>Debate Game (Coming Soon)</option>
@@ -253,7 +253,7 @@ const ArenaSection = ({ authState, startBattle, openLogin }) => {
         <div className={`w-full lg:w-1/2 lg:pr-12 flex flex-col items-center ${playMode === 'Human vs AI' ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
           <h2 className="text-2xl font-black text-white italic uppercase tracking-[0.2em] mb-4 text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Attacker</h2>
           {playMode === 'Human vs AI' ? (
-             <div className="w-full flex flex-col items-center justify-center h-48 border border-model-red/30 bg-model-red/5 p-8 text-center"><HumanSVG className="w-16 h-16 mb-4" /><p className="text-white font-bold uppercase tracking-widest text-sm">Human Override</p></div>
+            <div className="w-full flex flex-col items-center justify-center h-48 border border-model-red/30 bg-model-red/5 p-8 text-center"><HumanSVG className="w-16 h-16 mb-4" /><p className="text-white font-bold uppercase tracking-widest text-sm">Human Override</p></div>
           ) : (
             <div className="grid grid-cols-3 gap-3 w-full max-w-md mx-auto">
               {MODELS.map(m => <FighterCard key={`atk-${m.id}`} model={m} isSelected={atkModel === m.id} onSelect={setAtkModel} role="attacker" />)}
@@ -296,19 +296,19 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
   const messagesEndRef = useRef(null);
   const [humanInput, setHumanInput] = useState('');
   const [isChatExpanded, setIsChatExpanded] = useState(false);
-  
+
   // Animation states: 'idle', 'clashing', 'retreat', 'critical', 'ko-atk', 'ko-def'
   const [fightAnimState, setFightAnimState] = useState('idle');
   const [healthFlash, setHealthFlash] = useState(false);
-  
+
   const [animMode, setAnimMode] = useState('kinetic');
   const [flyingMsg, setFlyingMsg] = useState(null);
   const [flyingMsgIndex, setFlyingMsgIndex] = useState(0);
 
   const [isWaitingForServer, setIsWaitingForServer] = useState(false);
 
-  useEffect(() => { 
-    if(isChatExpanded) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); 
+  useEffect(() => {
+    if (isChatExpanded) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [battleState.messages, isChatExpanded]);
 
   // Simulate health drops only when resources actually change
@@ -321,20 +321,20 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
 
   const handleSend = () => {
     if (!humanInput.trim()) return;
-    
+
     // TODO: send user message to backend and await AI response
     // POST { prompt: humanInput, model: battleState.defenderModel, history: battleState.messages } to /api/turn — await { response } from backend
     apiSendMessage(1, humanInput);
-    
+
     setBattleState(prev => ({
       ...prev,
       messages: [...prev.messages, { id: Date.now(), role: 'attacker', text: humanInput, tokens: Math.floor(humanInput.length / 4) }]
     }));
-    
+
     setHumanInput('');
     setIsWaitingForServer(true); // TODO: agent acts only when backend pushes a response here
     triggerClashAnimation();
-    
+
     // Mocking the server response to remove the waiting state just for the demo
     setTimeout(() => setIsWaitingForServer(false), 2000);
   };
@@ -343,7 +343,7 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
     if (flyingMsg) return;
     const msgTemplate = FLYING_PLACEHOLDERS[flyingMsgIndex % FLYING_PLACEHOLDERS.length];
     setFlyingMsg({ ...msgTemplate, id: Date.now() });
-    
+
     // Simulate network delay / animation time
     setTimeout(() => {
       setBattleState(prev => ({
@@ -368,36 +368,36 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
       setTimeout(() => setFightAnimState('idle'), 500);
     }, 200);
   };
-  
+
   const handleVDEmo = () => { setFightAnimState('ko-atk'); setTimeout(() => { onVictoryDemo(); setFightAnimState('idle'); }, 1000); };
   const handleLDemo = () => { setFightAnimState('ko-def'); setTimeout(() => { onDefeatDemo(); setFightAnimState('idle'); }, 1000); };
 
-  const healthPercent = (battleState.attackerResourcesRemaining / 100) * 100;
+  const healthPercent = (battleState.attackerResourcesRemaining / 10000) * 100;
   const isLowHealth = battleState.attackerResourcesRemaining <= 30;
   const healthBarColor = healthPercent > 50 ? 'bg-white' : healthPercent > 30 ? 'bg-model-gold' : 'bg-model-red animate-pulse';
 
   const AtkLogo = getModelInfo(battleState.attackerModel).Logo;
   const DefLogo = getModelInfo(battleState.defenderModel).Logo;
-  
-  const lastMessage = battleState.messages.length > 0 ? battleState.messages[battleState.messages.length-1] : null;
+
+  const lastMessage = battleState.messages.length > 0 ? battleState.messages[battleState.messages.length - 1] : null;
 
   // Animation Variants
   const atkVariants = {
-    idle: { y: [0, -10, 0], transition: { repeat: Infinity, duration: 3, ease: "easeInOut" }},
-    clashing: { x: window.innerWidth * 0.15, scale: 1.1, rotate: 10, transition: { type: "spring", stiffness: 300, damping: 20 }},
-    retreat: { x: 0, scale: 1, rotate: 0, transition: { type: "spring", stiffness: 200, damping: 25 }},
-    critical: { x: window.innerWidth * 0.15, scale: 1.3, rotate: 15, transition: { duration: 0.1 }},
-    'ko-atk': { scale: 1.5, filter: 'drop-shadow(0 0 30px #fbbf24)', transition: { duration: 0.5 }},
-    'ko-def': { y: 200, rotate: -90, opacity: 0, filter: 'grayscale(100%)', transition: { duration: 0.5 }}
+    idle: { y: [0, -10, 0], transition: { repeat: Infinity, duration: 3, ease: "easeInOut" } },
+    clashing: { x: window.innerWidth * 0.15, scale: 1.1, rotate: 10, transition: { type: "spring", stiffness: 300, damping: 20 } },
+    retreat: { x: 0, scale: 1, rotate: 0, transition: { type: "spring", stiffness: 200, damping: 25 } },
+    critical: { x: window.innerWidth * 0.15, scale: 1.3, rotate: 15, transition: { duration: 0.1 } },
+    'ko-atk': { scale: 1.5, filter: 'drop-shadow(0 0 30px #fbbf24)', transition: { duration: 0.5 } },
+    'ko-def': { y: 200, rotate: -90, opacity: 0, filter: 'grayscale(100%)', transition: { duration: 0.5 } }
   };
 
   const defVariants = {
-    idle: { y: [0, 10, 0], transition: { repeat: Infinity, duration: 4, ease: "easeInOut", delay: 1 }},
-    clashing: { x: -window.innerWidth * 0.15, scale: 1.1, rotate: -10, transition: { type: "spring", stiffness: 300, damping: 20 }},
-    retreat: { x: 0, scale: 1, rotate: 0, transition: { type: "spring", stiffness: 200, damping: 25 }},
+    idle: { y: [0, 10, 0], transition: { repeat: Infinity, duration: 4, ease: "easeInOut", delay: 1 } },
+    clashing: { x: -window.innerWidth * 0.15, scale: 1.1, rotate: -10, transition: { type: "spring", stiffness: 300, damping: 20 } },
+    retreat: { x: 0, scale: 1, rotate: 0, transition: { type: "spring", stiffness: 200, damping: 25 } },
     critical: { rotate: [-10, 10, -10, 10, 0], x: [-10, 10, -10, 10, 0], scale: 0.9, transition: { duration: 0.3 } }, // shake
-    'ko-atk': { y: 200, rotate: 90, opacity: 0, filter: 'grayscale(100%)', transition: { duration: 0.5 }},
-    'ko-def': { scale: 1.5, filter: 'drop-shadow(0 0 30px #ffffff)', transition: { duration: 0.5 }}
+    'ko-atk': { y: 200, rotate: 90, opacity: 0, filter: 'grayscale(100%)', transition: { duration: 0.5 } },
+    'ko-def': { scale: 1.5, filter: 'drop-shadow(0 0 30px #ffffff)', transition: { duration: 0.5 } }
   };
 
   return (
@@ -437,26 +437,26 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
       </div>
 
       <div className={`w-full max-w-6xl mx-auto flex flex-col relative z-20 transition-all duration-500 ease-in-out ${isChatExpanded ? 'h-[90vh]' : 'h-auto items-center justify-center my-auto'}`}>
-        
+
         {/* HUD Area (Expands/Shrinks based on Chat State) */}
         <div className={`flex justify-between items-center w-full transition-all duration-500 ${isChatExpanded ? 'mb-6 scale-90 origin-top' : 'mb-16 scale-110'}`}>
           <div className="w-[30%] relative z-30">
-             <div className="flex items-center gap-3 mb-4 justify-end">
-               <span className="font-black text-2xl text-white uppercase tracking-wider text-right">{getModelInfo(battleState.attackerModel).name}</span>
-               <motion.div variants={atkVariants} animate={fightAnimState} className="relative z-40">
-                  <AtkLogo className={`rounded-xl bg-black border-2 shadow-xl object-cover transition-colors ${healthFlash ? 'border-white !bg-white' : 'border-model-red'} ${isChatExpanded ? 'w-16 h-16' : 'w-24 h-24'}`} />
-               </motion.div>
-             </div>
-             
-             <div className="h-4 w-full bg-[#111] border-2 border-gray-800 skew-x-12 overflow-hidden shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)] relative">
-               {/* Health Bar base */}
-               <motion.div className={`h-full float-right absolute right-0 top-0 bottom-0 ${healthFlash ? 'bg-white' : healthBarColor} shadow-[0_0_10px_rgba(255,255,255,0.5)]`} initial={false} animate={{ width: `${healthPercent}%` }} transition={{ type: "spring", stiffness: 40 }} />
-               {/* Health Flash Layer */}
-               <AnimatePresence>
-                  {healthFlash && <motion.div initial={{ opacity: 1 }} animate={{ opacity: 0 }} transition={{ duration: 0.3 }} className="absolute inset-0 bg-white" />}
-               </AnimatePresence>
-             </div>
-             <div className="text-right text-xs uppercase font-bold tracking-widest mt-2 text-gray-500">Resources: <span className={isLowHealth ? 'text-model-red font-black text-sm' : 'text-white'}>{battleState.attackerResourcesRemaining}/100</span></div>
+            <div className="flex items-center gap-3 mb-4 justify-end">
+              <span className="font-black text-2xl text-white uppercase tracking-wider text-right">{getModelInfo(battleState.attackerModel).name}</span>
+              <motion.div variants={atkVariants} animate={fightAnimState} className="relative z-40">
+                <AtkLogo className={`rounded-xl bg-black border-2 shadow-xl object-cover transition-colors ${healthFlash ? 'border-white !bg-white' : 'border-model-red'} ${isChatExpanded ? 'w-16 h-16' : 'w-24 h-24'}`} />
+              </motion.div>
+            </div>
+
+            <div className="h-4 w-full bg-[#111] border-2 border-gray-800 skew-x-12 overflow-hidden shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)] relative">
+              {/* Health Bar base */}
+              <motion.div className={`h-full float-right absolute right-0 top-0 bottom-0 ${healthFlash ? 'bg-white' : healthBarColor} shadow-[0_0_10px_rgba(255,255,255,0.5)]`} initial={false} animate={{ width: `${healthPercent}%` }} transition={{ type: "spring", stiffness: 40 }} />
+              {/* Health Flash Layer */}
+              <AnimatePresence>
+                {healthFlash && <motion.div initial={{ opacity: 1 }} animate={{ opacity: 0 }} transition={{ duration: 0.3 }} className="absolute inset-0 bg-white" />}
+              </AnimatePresence>
+            </div>
+            <div className="text-right text-xs uppercase font-bold tracking-widest mt-2 text-gray-500">Resources: <span className={isLowHealth ? 'text-model-red font-black text-sm' : 'text-white'}>{battleState.attackerResourcesRemaining}/100</span></div>
           </div>
 
           <div className="w-[20%] flex flex-col items-center justify-center relative z-20">
@@ -474,24 +474,24 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
           </div>
 
           <div className="w-[30%] relative z-30">
-             <div className="flex items-center gap-3 mb-4 justify-start">
-               <motion.div variants={defVariants} animate={fightAnimState} className="relative z-40">
-                  <DefLogo className={`rounded-xl bg-black border-2 shadow-xl object-cover transition-colors ${fightAnimState === 'critical' ? 'border-white filter brightness-150' : 'border-gray-500'} ${isChatExpanded ? 'w-16 h-16' : 'w-24 h-24'}`} />
-               </motion.div>
-               <span className="font-black text-2xl text-white uppercase tracking-wider">{getModelInfo(battleState.defenderModel).name}</span>
-             </div>
-             <div className="h-4 w-full bg-[#111] border-2 border-gray-800 skew-x-[-12deg] overflow-hidden shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)] relative">
-               <div className={`h-full w-full transition-colors ${fightAnimState === 'critical' ? 'bg-model-red animate-pulse' : 'bg-gray-500'}`} />
-             </div>
-             <div className={`text-left text-xs uppercase font-bold tracking-widest mt-2 transition-colors ${fightAnimState === 'critical' ? 'text-model-red' : 'text-gray-500'}`}>
-                {fightAnimState === 'critical' ? 'SHIELD FLUX!' : 'Defensive Core'}
-             </div>
+            <div className="flex items-center gap-3 mb-4 justify-start">
+              <motion.div variants={defVariants} animate={fightAnimState} className="relative z-40">
+                <DefLogo className={`rounded-xl bg-black border-2 shadow-xl object-cover transition-colors ${fightAnimState === 'critical' ? 'border-white filter brightness-150' : 'border-gray-500'} ${isChatExpanded ? 'w-16 h-16' : 'w-24 h-24'}`} />
+              </motion.div>
+              <span className="font-black text-2xl text-white uppercase tracking-wider">{getModelInfo(battleState.defenderModel).name}</span>
+            </div>
+            <div className="h-4 w-full bg-[#111] border-2 border-gray-800 skew-x-[-12deg] overflow-hidden shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)] relative">
+              <div className={`h-full w-full transition-colors ${fightAnimState === 'critical' ? 'bg-model-red animate-pulse' : 'bg-gray-500'}`} />
+            </div>
+            <div className={`text-left text-xs uppercase font-bold tracking-widest mt-2 transition-colors ${fightAnimState === 'critical' ? 'text-model-red' : 'text-gray-500'}`}>
+              {fightAnimState === 'critical' ? 'SHIELD FLUX!' : 'Defensive Core'}
+            </div>
           </div>
         </div>
 
         {/* Chat Area */}
         <div className="w-full flex-1 flex flex-col items-center z-20">
-          
+
           {/* Collapsed State Summary */}
           {!isChatExpanded && lastMessage && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl bg-[#0d0d0d] border border-gray-800 p-4 mb-6 relative overflow-hidden text-center cursor-pointer hover:border-gray-600 transition-colors" onClick={() => setIsChatExpanded(true)}>
@@ -501,12 +501,12 @@ const LiveBattleSection = ({ battleState, authState, onVictoryDemo, onDefeatDemo
               </div>
               <p className="text-gray-300 italic text-sm line-clamp-2 px-8">"{lastMessage.text}"</p>
               <div className="mt-4 flex justify-center text-model-red text-xs font-bold uppercase tracking-widest items-center gap-1 hover:text-white transition-colors">
-                 Expand Feed <ChevronDown className="w-4 h-4" />
+                Expand Feed <ChevronDown className="w-4 h-4" />
               </div>
             </motion.div>
           )}
 
-              {/* Expanded State Feed */}
+          {/* Expanded State Feed */}
           {isChatExpanded && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="w-full flex-1 flex flex-col bg-[#050505] border border-gray-900 shadow-[inset_0_0_50px_rgba(0,0,0,0.8)] mb-4">
               <div className="flex justify-between items-center px-4 py-2 border-b border-gray-900 bg-black">
@@ -570,7 +570,7 @@ const ScoreboardSection = ({ scoreboardState }) => {
     <section className="snap-section py-24 px-4 bg-transparent border-t border-gray-900 relative z-10 overflow-y-auto">
       <div className="max-w-7xl mx-auto backdrop-blur-md bg-black/40 p-8 rounded-2xl border border-gray-900">
         <h2 className="text-4xl font-black text-center text-white mb-16 uppercase tracking-widest drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]">Global Rankings</h2>
-        
+
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Attackers */}
           <div>
@@ -578,14 +578,14 @@ const ScoreboardSection = ({ scoreboardState }) => {
               <Trophy className="w-8 h-8 text-model-gold drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
               <h3 className="text-2xl font-black text-white uppercase tracking-[0.2em]">Top Extractor</h3>
             </div>
-            
+
             <div className="space-y-3">
               {scoreboardState.attackers.map((row) => {
                 const Logo = getModelInfo(row.id).Logo;
                 const isGold = row.rank === 1;
                 const isSilver = row.rank === 2;
                 const isBronze = row.rank === 3;
-                
+
                 return (
                   <motion.div key={row.rank} whileHover={{ scale: 1.02, x: 10 }} className={`flex items-center p-3 border transition-colors bg-[#0a0a0a]/80 group ${isGold ? 'border-model-gold shadow-[0_0_20px_rgba(251,191,36,0.15)] bg-[#1a1400]/80' : isSilver ? 'border-gray-400' : isBronze ? 'border-[#b45309]' : 'border-gray-800'}`}>
                     <div className="w-12 text-center">
@@ -621,14 +621,14 @@ const ScoreboardSection = ({ scoreboardState }) => {
               <Shield className="w-8 h-8 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
               <h3 className="text-2xl font-black text-white uppercase tracking-[0.2em]">Top Defender</h3>
             </div>
-            
+
             <div className="space-y-3">
               {scoreboardState.defenders.map((row) => {
                 const Logo = getModelInfo(row.id).Logo;
                 const isGold = row.rank === 1;
                 const isSilver = row.rank === 2;
                 const isBronze = row.rank === 3;
-                
+
                 return (
                   <motion.div key={row.rank} whileHover={{ scale: 1.02, x: 10 }} className={`flex items-center p-3 border transition-colors bg-[#0a0a0a]/80 group ${isGold ? 'border-white shadow-[0_0_20px_rgba(255,255,255,0.15)] bg-[#111]/80' : isSilver ? 'border-gray-500' : isBronze ? 'border-[#a16207]' : 'border-gray-800'}`}>
                     <div className="w-12 text-center">
@@ -712,7 +712,7 @@ const VictoryScreen = ({ winner, battleState, onClose }) => {
 
   if (!winner) return null;
   const isAtkWin = winner === 'attacker';
-  
+
   const AtkLogo = getModelInfo(battleState.attackerModel).Logo;
   const DefLogo = getModelInfo(battleState.defenderModel).Logo;
 
@@ -729,7 +729,7 @@ const VictoryScreen = ({ winner, battleState, onClose }) => {
               <motion.div animate={{ rotateY: 360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="text-model-gold drop-shadow-[0_0_20px_rgba(251,191,36,0.8)] mb-6"><Trophy className="w-24 h-24" /></motion.div>
               <h2 className="text-5xl md:text-7xl font-black text-white uppercase tracking-tighter mb-4 drop-shadow-md">Secret Extracted</h2>
               <div className="px-8 py-3 bg-model-gold/10 border border-model-gold text-model-gold mb-16 inline-block font-mono text-3xl font-black tracking-[0.2em] shadow-[inset_0_0_20px_rgba(251,191,36,0.2)]">"{battleState.secretWord}"</div>
-              
+
               <div className="flex items-center gap-16 w-full justify-center mb-12 relative">
                 <div className="text-center z-10">
                   <div className="text-[10px] uppercase text-model-gold font-bold mb-3 tracking-[0.3em]">Victor</div>
@@ -753,7 +753,7 @@ const VictoryScreen = ({ winner, battleState, onClose }) => {
               <motion.div animate={{ y: [-10, 10, -10] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.8)] mb-6"><Shield className="w-24 h-24" /></motion.div>
               <h2 className="text-5xl md:text-7xl font-black text-white uppercase tracking-tighter mb-4 drop-shadow-md text-center">Defender Survived</h2>
               <div className="text-model-red font-black tracking-widest uppercase mb-16 text-lg tracking-[0.3em]">Attacker Depleted</div>
-              
+
               <div className="flex items-center gap-16 w-full justify-center mb-12">
                 <div className="text-center opacity-40 grayscale">
                   <div className="text-[10px] uppercase text-model-red font-bold mb-3 tracking-[0.3em] line-through">Eliminated</div>
@@ -802,13 +802,13 @@ export default function App() {
 
   const [authState, setAuthState] = useState({ isLoggedIn: false, username: null });
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  
+
   const [queueState, setQueueState] = useState({ entries: [], myPosition: null });
   const [battleState, setBattleState] = useState({
     isActive: false, attackerModel: 'claude', defenderModel: 'chatgpt', secretWord: 'OBLIVION',
     messages: INITIAL_BATTLE_MESSAGES, attackerResourcesRemaining: 100, playMode: 'AI vs AI', gameMode: 'word_guessing', winner: null
   });
-  
+
   const [scoreboardState] = useState({
     attackers: MOCK_ATTACKERS_SCORE,
     defenders: MOCK_DEFENDERS_SCORE,
@@ -860,7 +860,7 @@ export default function App() {
       <EmberParticles /> {/* GLOBAL PARTICLES NOW */}
       <Navbar authState={authState} openLogin={() => setIsLoginOpen(true)} scrollTo={scrollTo} queueState={queueState} theme={theme} toggleTheme={toggleTheme} />
       <DotNavigation activeSection={activeSection} scrollTo={scrollTo} />
-      
+
       <main ref={containerRef} className="snap-container flex-1 mt-16 relative z-10">
         <HeroSection scrollTo={scrollTo} />
         <ArenaSection authState={authState} startBattle={handleStartBattle} openLogin={() => setIsLoginOpen(true)} />
@@ -870,7 +870,7 @@ export default function App() {
       </main>
 
       <AuthModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onLogin={(u) => { setAuthState({ isLoggedIn: true, username: u }); setIsLoginOpen(false); }} />
-      <VictoryScreen winner={battleState.winner} battleState={battleState} onClose={() => setBattleState(prev => ({...prev, winner: null}))} />
+      <VictoryScreen winner={battleState.winner} battleState={battleState} onClose={() => setBattleState(prev => ({ ...prev, winner: null }))} />
     </div>
   );
 }
