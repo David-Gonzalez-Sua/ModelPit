@@ -48,7 +48,7 @@ def get_gemini_models():
         print(f"Error fetching Gemini models: {e}")
         return []
 
-def call_gemini(system_prompt, user_message, model="gemini-2.0-flash"):
+def call_gemini(system_prompt, user_message, model="gemini-3-flash-preview"):
     api_key = os.getenv('GEMINI_KEY') or os.getenv('GOOGLE_API_KEY')
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     

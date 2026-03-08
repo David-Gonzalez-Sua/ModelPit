@@ -46,6 +46,7 @@
             const [loading, setLoading] = useState(false);
             const [autoPlay, setAutoPlay] = useState(false);
             const [resources, setResources] = useState(100);
+            const [showLiveFeed, setShowLiveFeed] = useState(false);
             
             
             const messagesEndRef = useRef(null);
@@ -88,13 +89,13 @@
 
             useEffect(() => {
                 if (agent1 === "gemini" && geminiModels.length > 0 && !geminiModels.includes(agent1SubModel)) {
-                    setAgent1SubModel(geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]);
+                    setAgent1SubModel(geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]));
                 }
             }, [agent1, geminiModels]);
 
             useEffect(() => {
                 if (agent2 === "gemini" && geminiModels.length > 0 && !geminiModels.includes(agent2SubModel)) {
-                    setAgent2SubModel(geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]);
+                    setAgent2SubModel(geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]));
                 }
             }, [agent2, geminiModels]);
 
@@ -198,7 +199,7 @@
                                     )}
                                     {agent1 === 'gemini' && (
                                         <select 
-                                            value={agent1SubModel || (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0])} 
+                                            value={agent1SubModel || (geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]))} 
                                             onChange={(e) => setAgent1SubModel(e.target.value)}
                                             className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
@@ -229,7 +230,7 @@
                                     )}
                                     {agent2 === 'gemini' && (
                                         <select 
-                                            value={agent2SubModel || (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0])} 
+                                            value={agent2SubModel || (geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]))} 
                                             onChange={(e) => setAgent2SubModel(e.target.value)}
                                             className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
@@ -317,27 +318,37 @@
 
                             {/* Live Feed */}
                             <div className="bg-slate-800 p-6 rounded-xl shadow-lg flex flex-col">
-                                <h2 className="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">Live Feed</h2>
-                                <div className="message-feed space-y-4 pr-2">
-                                    {messages.length === 0 && (
-                                        <div className="text-slate-500 italic text-center py-8">No messages yet...</div>
-                                    )}
-                                    {messages.map((msg, idx) => (
-                                        <div key={idx} className={`p-3 rounded-lg ${msg.role.includes('1') || msg.role === 'attacker' ? 'bg-blue-900/40 ml-0 mr-8 border-l-4 border-blue-500' : 'bg-purple-900/40 ml-8 mr-0 border-r-4 border-purple-500 text-right'}`}>
-                                            <div className="text-xs font-bold text-slate-400 uppercase mb-1">{msg.role}</div>
-                                            <div className="text-sm mb-2">{msg.text}</div>
-                                            {msg.analysis && (
-                                                <details className="mt-2">
-                                                    <summary className="text-[10px] cursor-pointer text-slate-500 hover:text-slate-300 uppercase">Thought Process</summary>
-                                                    <div className="text-[10px] mt-1 text-slate-400 bg-black/30 p-2 rounded italic">
-                                                        {msg.analysis}
-                                                    </div>
-                                                </details>
-                                            )}
-                                        </div>
-                                    ))}
-                                    <div ref={messagesEndRef} />
+                                <div 
+                                    className="flex justify-between items-center mb-4 border-b border-slate-700 pb-2 cursor-pointer hover:bg-slate-700/30 transition-colors p-2 rounded-t-lg"
+                                    onClick={() => setShowLiveFeed(!showLiveFeed)}
+                                >
+                                    <h2 className="text-xl font-semibold">Live Feed {messages.length > 0 && `(${messages.length})`}</h2>
+                                    <span className="text-slate-400 text-sm">
+                                        {showLiveFeed ? '▼ Hide' : '▶ Expand'}
+                                    </span>
                                 </div>
+                                {showLiveFeed && (
+                                    <div className="message-feed space-y-4 pr-2">
+                                        {messages.length === 0 && (
+                                            <div className="text-slate-500 italic text-center py-8">No messages yet...</div>
+                                        )}
+                                        {messages.map((msg, idx) => (
+                                            <div key={idx} className={`p-3 rounded-lg ${msg.role.includes('1') || msg.role === 'attacker' ? 'bg-blue-900/40 ml-0 mr-8 border-l-4 border-blue-500' : 'bg-purple-900/40 ml-8 mr-0 border-r-4 border-purple-500 text-right'}`}>
+                                                <div className="text-xs font-bold text-slate-400 uppercase mb-1">{msg.role}</div>
+                                                <div className="text-sm mb-2">{msg.text}</div>
+                                                {msg.analysis && (
+                                                    <details className="mt-2">
+                                                        <summary className="text-[10px] cursor-pointer text-slate-500 hover:text-slate-300 uppercase">Thought Process</summary>
+                                                        <div className="text-[10px] mt-1 text-slate-400 bg-black/30 p-2 rounded italic">
+                                                            {msg.analysis}
+                                                        </div>
+                                                    </details>
+                                                )}
+                                            </div>
+                                        ))}
+                                        <div ref={messagesEndRef} />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
