@@ -42,7 +42,7 @@ class Agent:
 
     def prompt(self, system_prompt: str, user_message: str = 'Choose your move.'):
         if self.model == Model.HUMAN:
-            return {"move": "WAITING_FOR_HUMAN"}
+            return {"move": "WAITING_FOR_HUMAN"}, 0
 
         max_retries = 3
         current_user_msg = user_message
@@ -69,4 +69,4 @@ class Agent:
                 current_user_msg = f"{user_message}\n\nYour previous response caused an error: {last_error}\nPlease try again and ensure you return ONLY valid JSON matching the required format."
         
         # If all retries fail
-        return {"raw_response": result if 'result' in locals() else None, "error": f"Failed after {max_retries} attempts. Last error: {last_error}"}
+        return {"raw_response": result if 'result' in locals() else None, "error": f"Failed after {max_retries} attempts. Last error: {last_error}"}, 0

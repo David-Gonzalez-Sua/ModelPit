@@ -116,7 +116,8 @@ def take_turn(battle_id: str):
         else:
             # Turn-based or simultaneous (played as turns here)
             prompt = game.get_prompt()
-            res = game.current_agent.prompt(prompt)
+            res, resources = game.current_agent.prompt(prompt)
+            game.resources -= resources
             if "error" in res:
                 raise Exception(f"Agent Error: {res['error']}")
             game.update(None, res)
