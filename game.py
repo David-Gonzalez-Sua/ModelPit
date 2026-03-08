@@ -25,8 +25,9 @@ class GameConfig:
         self.return_format = return_format
 
 class Agent:
-    def __init__(self, model: Model):
+    def __init__(self, model: Model, model_name: str = None):
         self.model = model
+        self.model_name = model_name
         self.memory = []
 
     def prompt(self, system_prompt: str):
@@ -37,15 +38,18 @@ class Agent:
             case Model.GPT:
                 result = model_api.call_gpt(system_prompt=system_prompt, user_message=user_message)
             case Model.CLAUDE:
-                result = model_api.call_claude
+                result = model_api.call_claude(system_prompt=system_prompt, user_message=user_message)
             case Model.GEMINI:
-                result = model_api.call_gemini
+                result = model_api.call_gemini(system_prompt=system_prompt, user_message=user_message)
             case Model.DEEPSEEK:
-                result = model_api.call_deepseek
+                result = model_api.call_deepseek(system_prompt=system_prompt, user_message=user_message)
             case Model.KIMI:
-                result = model_api.call_kimi
+                result = model_api.call_kimi(system_prompt=system_prompt, user_message=user_message)
             case Model.OLLAMA:
-                result = model_api.call_ollama
+                if self.model_name:
+                    result = model_api.call_ollama(system_prompt=system_prompt, user_message=user_message, model=self.model_name)
+                else:
+                    result = model_api.call_ollama(system_prompt=system_prompt, user_message=user_message)
             case _:
                 raise Exception(f"Model {self.model} not supported.")
         
