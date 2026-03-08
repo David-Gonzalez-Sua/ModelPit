@@ -37,6 +37,10 @@ class StartBattleRequest(BaseModel):
 async def get_ollama_models():
     return {"models": model_api.list_ollama_models()}
 
+@app.get("/api/gemini/models")
+async def get_gemini_models():
+    return {"models": model_api.get_gemini_models()}
+
 @app.post("/api/battle/start")
 async def start_battle(req: StartBattleRequest):
     battle_id = str(uuid.uuid4())

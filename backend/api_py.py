@@ -1,9 +1,6 @@
 import os
 import requests
-import dotenv
 import json
-
-dotenv.load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 def handle_api_error(res, service_name):
@@ -17,8 +14,43 @@ def handle_api_error(res, service_name):
     raise Exception(error_msg)
 
 # ============ GEMINI ============
-def call_gemini(system_prompt, user_message):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={os.getenv('GEMINI_KEY')}"
+def get_gemini_models():
+    api_key = os.getenv('GEMINI_KEY') or os.getenv('GOOGLE_API_KEY')
+    if not api_key:
+        print("Error: No Gemini API key found in environment variables (checked GEMINI_KEY and GOOGLE_API_KEY)")
+        return []
+    
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            models = []
+            for m in data.get('models', []):
+                name = m['name'].split('/')[-1]
+                methods = m.get('supportedGenerationMethods', [])
+                if 'generateContent' in methods:
+                    models.append(name)
+            
+            if models:
+                # Put preview/flash models first if they exist
+                models.sort(key=lambda x: ("preview" in x or "flash" in x), reverse=True)
+                # Ensure the user's mentioned model is included if not found but seems likely to exist
+                if "gemini-3-flash-preview" not in models:
+                    models.insert(0, "gemini-3-flash-preview")
+                return models
+                
+            return ["gemini-3-flash-preview", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+            
+        print(f"Gemini API Error: Status {response.status_code} - {response.text}")
+        return []
+    except Exception as e:
+        print(f"Error fetching Gemini models: {e}")
+        return []
+
+def call_gemini(system_prompt, user_message, model="gemini-2.0-flash"):
+    api_key = os.getenv('GEMINI_KEY') or os.getenv('GOOGLE_API_KEY')
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     
     payload = {
         "systemInstruction": {"parts": [{"text": system_prompt}]},

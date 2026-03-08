@@ -23,6 +23,7 @@
         const { useState, useEffect, useRef } = React;
 
         const MODELS = ["chatgpt", "claude", "gemini", "deepseek", "kimi", "ollama", "human"];
+        const GEMINI_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
         const GAMES = [
             { id: "word_guessing", name: "Word Guessing (Social Engineering)" },
             { id: "tictactoe", name: "Tic Tac Toe" },
@@ -33,6 +34,7 @@
             const [agent1, setAgent1] = useState("chatgpt");
             const [agent2, setAgent2] = useState("gemini");
             const [ollamaModels, setOllamaModels] = useState([]);
+            const [geminiModels, setGeminiModels] = useState([]);
             const [agent1SubModel, setAgent1SubModel] = useState("");
             const [agent2SubModel, setAgent2SubModel] = useState("");
             const [gameMode, setGameMode] = useState("word_guessing");
@@ -67,11 +69,34 @@
                     }
                 };
                 fetchOllamaModels();
+
+                const fetchGeminiModels = async () => {
+                    try {
+                        const res = await fetch("/api/gemini/models");
+                        const data = await res.json();
+                        setGeminiModels(data.models || []);
+                    } catch (err) {
+                        console.error("Failed to fetch Gemini models", err);
+                    }
+                };
+                fetchGeminiModels();
             }, []);
 
             useEffect(() => {
                 scrollToBottom();
             }, [messages]);
+
+            useEffect(() => {
+                if (agent1 === "gemini" && geminiModels.length > 0 && !geminiModels.includes(agent1SubModel)) {
+                    setAgent1SubModel(geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]);
+                }
+            }, [agent1, geminiModels]);
+
+            useEffect(() => {
+                if (agent2 === "gemini" && geminiModels.length > 0 && !geminiModels.includes(agent2SubModel)) {
+                    setAgent2SubModel(geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]);
+                }
+            }, [agent2, geminiModels]);
 
             useEffect(() => {
                 let interval;
@@ -96,9 +121,9 @@
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             attacker: agent1,
-                            attackerSubModel: agent1 === "ollama" ? agent1SubModel : null,
+                            attackerSubModel: (agent1 === "ollama" || agent1 === "gemini") ? agent1SubModel : null,
                             defender: agent2,
-                            defenderSubModel: agent2 === "ollama" ? agent2SubModel : null,
+                            defenderSubModel: (agent2 === "ollama" || agent2 === "gemini") ? agent2SubModel : null,
                             playMode: "ai_vs_ai",
                             gameMode: gameMode
                         })
@@ -171,6 +196,16 @@
                                             {ollamaModels.length === 0 && <option value="">No Ollama Models Found</option>}
                                         </select>
                                     )}
+                                    {agent1 === 'gemini' && (
+                                        <select 
+                                            value={agent1SubModel || (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0])} 
+                                            onChange={(e) => setAgent1SubModel(e.target.value)}
+                                            className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {geminiModels.map(m => <option key={m} value={m}>{m}</option>)}
+                                            {geminiModels.length === 0 && <option value="">No Gemini Models Found</option>}
+                                        </select>
+                                    )}
                                 </div>
 
                                 <div>
@@ -190,6 +225,16 @@
                                         >
                                             {ollamaModels.map(m => <option key={m} value={m}>{m}</option>)}
                                             {ollamaModels.length === 0 && <option value="">No Ollama Models Found</option>}
+                                        </select>
+                                    )}
+                                    {agent2 === 'gemini' && (
+                                        <select 
+                                            value={agent2SubModel || (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0])} 
+                                            onChange={(e) => setAgent2SubModel(e.target.value)}
+                                            className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {geminiModels.map(m => <option key={m} value={m}>{m}</option>)}
+                                            {geminiModels.length === 0 && <option value="">No Gemini Models Found</option>}
                                         </select>
                                     )}
                                 </div>
