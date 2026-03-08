@@ -68,7 +68,7 @@ async def start_battle(req: StartBattleRequest):
         "gameMode": req.gameMode
     }
     
-    return {"battleId": battle_id}
+    return {"battleId": battle_id, "secretWord": getattr(game, 'secret_word', None)}
 
 @app.post("/api/battle/turn")
 async def take_turn(battle_id: str):

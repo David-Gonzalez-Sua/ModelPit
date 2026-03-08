@@ -30,6 +30,124 @@
             { id: "rockpapsci", name: "Rock Paper Scissors" }
         ];
 
+
+        const TicTacToeBoard = ({ state, finished, winner }) => {
+            const rows = state.split('\n').slice(1).map(row => row.trim().split(' ').slice(1));
+            return (
+                <div className="grid grid-cols-3 gap-2 w-48 h-48 mx-auto">
+                    {rows.flat().map((cell, i) => (
+                        <div key={i} className="bg-slate-700 border border-slate-600 rounded flex items-center justify-center text-3xl font-bold">
+                            {cell === 'X' && <span className="text-blue-500">X</span>}
+                            {cell === 'O' && <span className="text-purple-500">O</span>}
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+    
+        const RockPaperScissorsBoard = ({ state }) => {
+            const getIcon = (move) => {
+                if (move === 'rock') return '🪨';
+                if (move === 'paper') return '📄';
+                if (move === 'scissors') return '✂️';
+                return '❓';
+            };
+            
+            const lines = state.split('\n');
+            const p1Moved = lines[0].includes('Moved');
+            const p2Moved = lines[1].includes('Moved');
+            const resultMatch = state.match(/Result: (\w+) vs (\w+)/);
+            
+            const m1 = resultMatch ? resultMatch[1] : (p1Moved ? 'ready' : null);
+            const m2 = resultMatch ? resultMatch[2] : (p2Moved ? 'ready' : null);
+
+            return (
+                <div className="flex justify-around items-center w-full h-32">
+                    <div className="flex flex-col items-center">
+                        <div className="text-4xl mb-2">{m1 === 'ready' ? '🧠' : getIcon(m1)}</div>
+                        <div className="text-xs text-slate-400">Agent 1</div>
+                    </div>
+                    <div className="text-2xl font-bold text-slate-500 font-mono">VS</div>
+                    <div className="flex flex-col items-center">
+                        <div className="text-4xl mb-2">{m2 === 'ready' ? '🧠' : getIcon(m2)}</div>
+                        <div className="text-xs text-slate-400">Agent 2</div>
+                    </div>
+                </div>
+            );
+        };
+    
+        const WordGuessingArena = ({ messages, resources, secretWord }) => {
+            const arenaMessagesEndRef = useRef(null);
+            
+            useEffect(() => {
+                arenaMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [messages]);
+
+            return (
+                <div className="relative w-full flex flex-col h-[400px] bg-slate-900/50 rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
+                    <div className="bg-slate-800/90 p-3 border-b border-slate-700 flex justify-between items-center z-30">
+                        <div className="flex items-center space-x-4">
+                            <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Attacker</span>
+                            <span className="text-slate-600 font-bold italic">VS</span>
+                            <span className="text-xs font-bold text-purple-400 uppercase tracking-widest">Defender</span>
+                        </div>
+                        <div className="bg-slate-900 px-2 py-1 rounded border border-slate-600">
+                            <span className="text-[10px] text-slate-500 uppercase mr-2 font-bold">Secret Word:</span>
+                            <span className="text-xs font-mono font-bold text-yellow-500">{secretWord || "???"}</span>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900/10 custom-scrollbar">
+                        {messages.length === 0 && (
+                            <div className="h-full flex items-center justify-center text-slate-500 italic text-sm">
+                                Waiting for battle to begin...
+                            </div>
+                        )}
+                        {messages.map((msg, idx) => {
+                            const isAtk = msg.role === "attacker" || msg.role.includes("1");
+                            return (
+                                <div key={idx} className={"flex " + (isAtk ? "justify-start" : "justify-end")}>
+                                    <div className={"max-w-[85%] rounded-xl p-3 shadow-md " + (
+                                        isAtk 
+                                        ? "bg-blue-600/10 border border-blue-500/20 text-blue-50" 
+                                        : "bg-purple-600/10 border border-purple-500/20 text-purple-50"
+                                    )}>
+                                        <div className={"text-[9px] font-black uppercase tracking-widest mb-1 opacity-40 " + (isAtk ? "text-blue-400" : "text-purple-400 text-right")}>
+                                            {msg.role}
+                                        </div>
+                                        <div className={"text-xs leading-relaxed " + (!isAtk ? "text-right" : "")}>{msg.text}</div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        <div ref={arenaMessagesEndRef} />
+                    </div>
+
+                    <div className="p-3 bg-slate-800/80 border-t border-slate-700">
+                        <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Attacker Resources</span>
+                            <span className={"text-xs font-mono font-bold " + (resources > 30 ? "text-slate-300" : "text-red-500 animate-pulse")}>{resources}%</span>
+                        </div>
+                        <div className="w-full bg-slate-900 rounded-full h-2 border border-slate-700 p-0.5">
+                            <div 
+                                className={"h-full rounded-full transition-all duration-700 ease-out " + (
+                                    resources > 60 ? "bg-blue-500" : 
+                                    resources > 25 ? "bg-yellow-500" : 
+                                    "bg-red-500"
+                                )}
+                                style={{ width: resources + "%" }}
+                            ></div>
+                        </div>
+                    </div>
+                    <style>{`
+                        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+                    `}</style>
+                </div>
+            );
+        };
+    
         function App() {
             const [agent1, setAgent1] = useState("chatgpt");
             const [agent2, setAgent2] = useState("gemini");
@@ -46,7 +164,8 @@
             const [loading, setLoading] = useState(false);
             const [autoPlay, setAutoPlay] = useState(false);
             const [resources, setResources] = useState(100);
-            const [showLiveFeed, setShowLiveFeed] = useState(false);
+            const [showLiveFeed, setShowLiveFeed] = useState(true);
+            const [secretWord, setSecretWord] = useState("");
             
             
             const messagesEndRef = useRef(null);
@@ -88,16 +207,28 @@
             }, [messages]);
 
             useEffect(() => {
-                if (agent1 === "gemini" && geminiModels.length > 0 && !geminiModels.includes(agent1SubModel)) {
-                    setAgent1SubModel(geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]));
+                if (agent1 === "gemini") {
+                    if (geminiModels.length > 0 && !geminiModels.includes(agent1SubModel)) {
+                        setAgent1SubModel(geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]));
+                    }
+                } else if (agent1 === "ollama") {
+                    if (ollamaModels.length > 0 && !ollamaModels.includes(agent1SubModel)) {
+                        setAgent1SubModel(ollamaModels[0]);
+                    }
                 }
-            }, [agent1, geminiModels]);
+            }, [agent1, geminiModels, ollamaModels]);
 
             useEffect(() => {
-                if (agent2 === "gemini" && geminiModels.length > 0 && !geminiModels.includes(agent2SubModel)) {
-                    setAgent2SubModel(geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]));
+                if (agent2 === "gemini") {
+                    if (geminiModels.length > 0 && !geminiModels.includes(agent2SubModel)) {
+                        setAgent2SubModel(geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]));
+                    }
+                } else if (agent2 === "ollama") {
+                    if (ollamaModels.length > 0 && !ollamaModels.includes(agent2SubModel)) {
+                        setAgent2SubModel(ollamaModels[0]);
+                    }
                 }
-            }, [agent2, geminiModels]);
+            }, [agent2, geminiModels, ollamaModels]);
 
             useEffect(() => {
                 let interval;
@@ -132,6 +263,7 @@
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.detail || "Failed to start battle");
                     setBattleId(data.battleId);
+                    if (data.secretWord) setSecretWord(data.secretWord);
                 } catch (err) {
                     console.error("Error starting battle: ", err.message);
                 }
@@ -150,14 +282,36 @@
                     if (data.error) {
                         throw new Error(data.error);
                     }
-                    setMessages(data.messages || []);
-                    setGameState(data.state || "");
-                    setFinished(data.finished);
-                    setWinner(data.winner);
-                    setResources(data.resources);
+
+                    // For word guessing, we sometimes get both Attacker and Defender messages in one call.
+                    // We'll show the Attacker's message immediately, then the Defender's after a short delay for realism.
+                    if (gameMode === 'word_guessing' && data.messages.length > messages.length + 1) {
+                        const allMessages = data.messages;
+                        const attackerMessage = allMessages[allMessages.length - 2];
+                        const defenderMessage = allMessages[allMessages.length - 1];
+                        
+                        // 1. Show only up to Attacker's message
+                        setMessages(allMessages.slice(0, -1));
+                        
+                        // 2. Wait 800ms, then show Defender's response
+                        setTimeout(() => {
+                            setMessages(allMessages);
+                            setGameState(data.state || "");
+                            setFinished(data.finished);
+                            setWinner(data.winner);
+                            setResources(data.resources);
+                            if (data.secretWord) setSecretWord(data.secretWord);
+                        }, 800);
+                    } else {
+                        setMessages(data.messages || []);
+                        setGameState(data.state || "");
+                        setFinished(data.finished);
+                        setWinner(data.winner);
+                        setResources(data.resources);
+                        if (data.secretWord) setSecretWord(data.secretWord);
+                    }
                 } catch (err) {
                     console.error("Error taking turn:", err);
-                    console.error("Turn Error: ", err.message);
                     setAutoPlay(false);
                 }
                 setLoading(false);
@@ -300,8 +454,13 @@
                                 <h2 className="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">Arena</h2>
                                 {gameState ? (
                                     <div className="flex flex-col items-center">
-                                        <div className="game-board mb-4 w-full text-center">
-                                            {gameState}
+                                        <div className="mb-4 w-full">
+                                            {gameMode === 'tictactoe' && <TicTacToeBoard state={gameState} finished={finished} winner={winner} />}
+                                            {gameMode === 'rockpapsci' && <RockPaperScissorsBoard state={gameState} />}
+                                            {gameMode === 'word_guessing' && <WordGuessingArena messages={messages} resources={resources} secretWord={secretWord} />}
+                                            {(!['tictactoe', 'rockpapsci', 'word_guessing'].includes(gameMode)) && (
+                                                <div className="game-board text-center">{gameState}</div>
+                                            )}
                                         </div>
                                         {finished && (
                                             <div className="text-2xl font-bold text-yellow-400 animate-bounce">

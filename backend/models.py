@@ -25,7 +25,7 @@ class Agent:
             case Model.CLAUDE:
                 return model_api.call_claude(system_prompt=system_prompt, user_message=user_message)
             case Model.GEMINI:
-                target_model = self.sub_model if self.sub_model else "gemini-2.0-flash"
+                target_model = self.sub_model if self.sub_model else "gemini-3-flash-preview"
                 return model_api.call_gemini(system_prompt=system_prompt, user_message=user_message, model=target_model)
             case Model.DEEPSEEK:
                 return model_api.call_deepseek(system_prompt=system_prompt, user_message=user_message)
