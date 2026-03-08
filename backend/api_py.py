@@ -182,7 +182,7 @@ def call_kimi(system_prompt, user_message):
 
 # ============ OLLAMA (LOCAL MODELS) ============
 def call_ollama(system_prompt, user_message, model="llama3"):
-    url = "http://10.216.143.246:11434/api/chat"
+    url = "http://localhost:11434/api/chat"
 
     payload = {
         "model": model,
@@ -205,7 +205,7 @@ def call_ollama(system_prompt, user_message, model="llama3"):
         raise e
 
 def list_ollama_models():
-    url = "http://10.216.143.246:11434/api/tags"
+    url = "http://localhost:11434/api/tags"
     try:
         res = requests.get(url, timeout=5)
         if res.status_code != 200:
