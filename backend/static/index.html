@@ -249,8 +249,11 @@
             const [resources, setResources] = useState(100);
             const [showLiveFeed, setShowLiveFeed] = useState(true);
             const [secretWord, setSecretWord] = useState("");
-
-
+            const [customSecretWord, setCustomSecretWord] = useState("OBLIVION");
+            const battleIdRef = useRef(null);
+            useEffect(() => { battleIdRef.current = battleId; }, [battleId]);
+            
+            
             const messagesEndRef = useRef(null);
 
             const scrollToBottom = () => {
@@ -323,6 +326,19 @@
                 return () => clearInterval(interval);
             }, [autoPlay, battleId, finished]);
 
+            
+            const resetUI = () => {
+                setBattleId(null);
+                setMessages([]);
+                setGameState("");
+                setFinished(false);
+                setWinner(null);
+                setResources(100);
+                setSecretWord("");
+                setAutoPlay(false);
+                setLoading(false);
+            };
+    
             const startBattle = async () => {
                 setLoading(true);
 
@@ -340,7 +356,8 @@
                             defender: agent2,
                             defenderSubModel: (agent2 === "ollama" || agent2 === "gemini") ? agent2SubModel : null,
                             playMode: "ai_vs_ai",
-                            gameMode: gameMode
+                            gameMode: gameMode,
+                            targetWord: gameMode === "word_guessing" ? (customSecretWord || "OBLIVION") : null
                         })
                     });
                     const data = await res.json();
@@ -353,8 +370,25 @@
                 setLoading(false);
             };
 
+            const stopBattle = async () => {
+                if (!battleId) return;
+                try {
+                    const res = await fetch(`/api/battle/stop?battle_id=${battleId}`, {
+                        method: "POST"
+                    });
+                    const data = await res.json();
+                    if (data.status === "stopped" || res.ok) {
+                        resetUI();
+                    }
+                } catch (err) {
+                    console.error("Error stopping battle:", err);
+                }
+            };
+
+
             const takeTurn = async () => {
                 if (!battleId || finished || loading) return;
+                const currentBattleId = battleId;
                 setLoading(true);
 
                 try {
@@ -362,6 +396,7 @@
                         method: "POST"
                     });
                     const data = await res.json();
+                    if (currentBattleId !== battleIdRef.current) return;
                     if (data.error) {
                         throw new Error(data.error);
                     }
@@ -417,17 +452,19 @@
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-400 mb-1">Agent 1 (Attacker/X)</label>
-                                    <select
-                                        value={agent1}
-                                        onChange={(e) => setAgent1(e.target.value)}
+                                    <select 
+                                        value={agent1} 
+                                        onChange={(e) => { setAgent1(e.target.value); resetUI(); }}
+                                        disabled={battleId && !finished}
                                         className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         {MODELS.map(m => <option key={m} value={m}>{m.toUpperCase()}</option>)}
                                     </select>
                                     {agent1 === 'ollama' && (
-                                        <select
-                                            value={agent1SubModel}
-                                            onChange={(e) => setAgent1SubModel(e.target.value)}
+                                        <select 
+                                            value={agent1SubModel} 
+                                            onChange={(e) => { setAgent1SubModel(e.target.value); resetUI(); }}
+                                            disabled={battleId && !finished}
                                             className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             {ollamaModels.map(m => <option key={m} value={m}>{m}</option>)}
@@ -435,9 +472,10 @@
                                         </select>
                                     )}
                                     {agent1 === 'gemini' && (
-                                        <select
-                                            value={agent1SubModel || (geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]))}
-                                            onChange={(e) => setAgent1SubModel(e.target.value)}
+                                        <select 
+                                            value={agent1SubModel || (geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]))} 
+                                            onChange={(e) => { setAgent1SubModel(e.target.value); resetUI(); }}
+                                            disabled={battleId && !finished}
                                             className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             {geminiModels.map(m => <option key={m} value={m}>{m}</option>)}
@@ -448,17 +486,19 @@
 
                                 <div>
                                     <label className="block text-sm font-medium text-slate-400 mb-1">Agent 2 (Defender/O)</label>
-                                    <select
-                                        value={agent2}
-                                        onChange={(e) => setAgent2(e.target.value)}
+                                    <select 
+                                        value={agent2} 
+                                        onChange={(e) => { setAgent2(e.target.value); resetUI(); }}
+                                        disabled={battleId && !finished}
                                         className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         {MODELS.map(m => <option key={m} value={m}>{m.toUpperCase()}</option>)}
                                     </select>
                                     {agent2 === 'ollama' && (
-                                        <select
-                                            value={agent2SubModel}
-                                            onChange={(e) => setAgent2SubModel(e.target.value)}
+                                        <select 
+                                            value={agent2SubModel} 
+                                            onChange={(e) => { setAgent2SubModel(e.target.value); resetUI(); }}
+                                            disabled={battleId && !finished}
                                             className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             {ollamaModels.map(m => <option key={m} value={m}>{m}</option>)}
@@ -466,9 +506,10 @@
                                         </select>
                                     )}
                                     {agent2 === 'gemini' && (
-                                        <select
-                                            value={agent2SubModel || (geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]))}
-                                            onChange={(e) => setAgent2SubModel(e.target.value)}
+                                        <select 
+                                            value={agent2SubModel || (geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]))} 
+                                            onChange={(e) => { setAgent2SubModel(e.target.value); resetUI(); }}
+                                            disabled={battleId && !finished}
                                             className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             {geminiModels.map(m => <option key={m} value={m}>{m}</option>)}
@@ -479,18 +520,33 @@
 
                                 <div>
                                     <label className="block text-sm font-medium text-slate-400 mb-1">Game</label>
-                                    <select
-                                        value={gameMode}
-                                        onChange={(e) => setGameMode(e.target.value)}
+                                    <select 
+                                        value={gameMode} 
+                                        onChange={(e) => { setGameMode(e.target.value); resetUI(); }}
+                                        disabled={battleId && !finished}
                                         className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         {GAMES.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                                     </select>
                                 </div>
+                                {gameMode === 'word_guessing' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-400 mb-1">Secret Word (Defender's Secret)</label>
+                                        <input 
+                                            type="text"
+                                            value={customSecretWord}
+                                            onChange={(e) => setCustomSecretWord(e.target.value.toUpperCase())}
+                                            disabled={battleId && !finished}
+                                            placeholder="Enter secret word..."
+                                            className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                                        />
+                                    </div>
+                                )}
+
 
                                 <button
                                     onClick={startBattle}
-                                    disabled={loading}
+                                    disabled={loading || (battleId && !finished)}
                                     className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition duration-200 mt-4"
                                 >
                                     Initialize Battle
@@ -513,6 +569,14 @@
                                             className={`flex-1 ${autoPlay ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white py-2 px-2 rounded-md transition duration-200 text-sm`}
                                         >
                                             {autoPlay ? 'Stop Auto' : 'Auto Play'}
+                                        </button>
+
+                                        <button 
+                                            onClick={stopBattle}
+                                            disabled={finished}
+                                            className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-slate-700 text-white py-2 px-2 rounded-md transition duration-200 text-sm"
+                                        >
+                                            Stop Match
                                         </button>
                                     </div>
                                     {gameMode === 'word_guessing' && (
