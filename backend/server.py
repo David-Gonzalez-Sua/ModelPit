@@ -92,7 +92,8 @@ async def take_turn(battle_id: str):
         if battle["gameMode"] == "word_guessing":
             # 1. Attacker Turn
             atk_prompt = game.get_prompt(role="attacker")
-            atk_res = game.agent_1.prompt(atk_prompt)
+            atk_res, atk_resources = game.agent_1.prompt(atk_prompt)
+            game.resources -= atk_resources
             if "error" in atk_res:
                  raise Exception(f"Attacker Error: {atk_res['error']}")
             game.update("attacker", atk_res)
@@ -100,7 +101,7 @@ async def take_turn(battle_id: str):
             if game.running:
                 # 2. Defender Turn
                 def_prompt = game.get_prompt(role="defender")
-                def_res = game.agent_2.prompt(def_prompt)
+                def_res, def_resources = game.agent_2.prompt(def_prompt)
                 if "error" in def_res:
                     raise Exception(f"Defender Error: {def_res['error']}")
                 game.update("defender", def_res)
