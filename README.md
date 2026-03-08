@@ -9,3 +9,5 @@ Model configuration is done with environmental variables accessible to the serve
 export GEMINI_KEY="<key>"
 export OPENAI_API_KEY=""<key>"
 ```
+
+Ollama can be pointed at a server or connects to localhost by default.
