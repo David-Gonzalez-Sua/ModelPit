@@ -4,6 +4,7 @@ import json
 import time
 from games.game import GameStates, GameConfig, Game, Games
 from games.tictactoe import TicTacToe
+from games.rockpapsci import RockPaperScissors
 
 # ==============================
 # Models & Game States
@@ -57,6 +58,7 @@ class Agent:
 # ==============================
 agent_1 = Agent(Model.GPT)
 agent_2 = Agent(Model.GPT)
+# You can swap this to TicTacToe(agent_1, agent_2) or RockPaperScissors(agent_1, agent_2)
 game = TicTacToe(agent_1, agent_2)
 
 while game.running:
@@ -69,11 +71,7 @@ while game.running:
             break
         except Exception as e:
             # Send error back to AI for self-correction
-            error_msg = str(e)
-            if "already taken" in error_msg:
-                error_prompt = f"That space is already taken! Please choose a different empty cell."
-            else:
-                error_prompt = f"Your previous move was invalid: {e}\nPlease choose a valid move."
+            error_prompt = f"Your previous move was invalid: {e}\nPlease choose a valid move."
             
             system_prompt += "\n" + error_prompt
             print(f"Agent failed, retrying... Error: {e}")
@@ -85,11 +83,13 @@ while game.running:
     # Check win/draw
     status = game.check_win()
     if status:
+        print(f"\nFinal State:")
+        print(game.get_state())
         match status:
             case GameStates.Agent1:
-                print("\nAgent 1 (X) wins!")
+                print(f"\n{game.marks[game.agent_1]} wins!")
             case GameStates.Agent2:
-                print("\nAgent 2 (O) wins!")
+                print(f"\n{game.marks[game.agent_2]} wins!")
             case GameStates.Draw:
                 print("\nGame is a draw!")
         game.running = False

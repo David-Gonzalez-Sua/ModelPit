@@ -2,6 +2,7 @@ from enum import Enum
 
 class Games(Enum):
     TICTACTOE = "tictactoe"
+    ROCKPAPERSCISSORS = "rockpaperscissors"
 
 class GameStates(Enum):
     Agent1 = 'agent1'

@@ -109,7 +109,7 @@ def call_kimi(system_prompt, user_message):
 
 # ============ OLLAMA (LOCAL MODELS) ============
 def call_ollama(system_prompt, user_message, model="llama3"):
-    url = "http://localhost:11434/api/chat"
+    url = "http://10.216.143.246:11434/api/chat"
 
     payload = {
         "model": model,
