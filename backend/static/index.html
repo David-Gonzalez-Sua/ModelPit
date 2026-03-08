@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ModelPit - AI Agent Battles</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code:wght@400;500&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .code { font-family: 'Fira Code', monospace; }
+        .message-feed { height: 400px; overflow-y: auto; }
+        .game-board { font-family: 'Fira Code', monospace; white-space: pre; background: #1e293b; padding: 1rem; border-radius: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const MODELS = ["chatgpt", "claude", "gemini", "deepseek", "kimi", "ollama", "human"];
+        const GAMES = [
+            { id: "word_guessing", name: "Word Guessing (Social Engineering)" },
+            { id: "tictactoe", name: "Tic Tac Toe" },
+            { id: "rockpapsci", name: "Rock Paper Scissors" }
+        ];
+
+        function App() {
+            const [agent1, setAgent1] = useState("chatgpt");
+            const [agent2, setAgent2] = useState("gemini");
+            const [ollamaModels, setOllamaModels] = useState([]);
+            const [agent1SubModel, setAgent1SubModel] = useState("");
+            const [agent2SubModel, setAgent2SubModel] = useState("");
+            const [gameMode, setGameMode] = useState("word_guessing");
+            const [battleId, setBattleId] = useState(null);
+            const [messages, setMessages] = useState([]);
+            const [gameState, setGameState] = useState("");
+            const [finished, setFinished] = useState(false);
+            const [winner, setWinner] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [autoPlay, setAutoPlay] = useState(false);
+            const [resources, setResources] = useState(100);
+            
+            
+            const messagesEndRef = useRef(null);
+
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            };
+
+            useEffect(() => {
+                const fetchOllamaModels = async () => {
+                    try {
+                        const res = await fetch("/api/ollama/models");
+                        const data = await res.json();
+                        setOllamaModels(data.models || []);
+                        if (data.models && data.models.length > 0) {
+                            setAgent1SubModel(data.models[0]);
+                            setAgent2SubModel(data.models[0]);
+                        }
+                    } catch (err) {
+                        console.error("Failed to fetch Ollama models", err);
+                    }
+                };
+                fetchOllamaModels();
+            }, []);
+
+            useEffect(() => {
+                scrollToBottom();
+            }, [messages]);
+
+            useEffect(() => {
+                let interval;
+                if (autoPlay && battleId && !finished) {
+                    interval = setInterval(() => {
+                        takeTurn();
+                    }, 2000);
+                }
+                return () => clearInterval(interval);
+            }, [autoPlay, battleId, finished]);
+
+            const startBattle = async () => {
+                setLoading(true);
+                
+                setMessages([]);
+                setGameState("");
+                setFinished(false);
+                setWinner(null);
+                try {
+                    const res = await fetch("/api/battle/start", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            attacker: agent1,
+                            attackerSubModel: agent1 === "ollama" ? agent1SubModel : null,
+                            defender: agent2,
+                            defenderSubModel: agent2 === "ollama" ? agent2SubModel : null,
+                            playMode: "ai_vs_ai",
+                            gameMode: gameMode
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.detail || "Failed to start battle");
+                    setBattleId(data.battleId);
+                } catch (err) {
+                    console.error("Error starting battle: ", err.message);
+                }
+                setLoading(false);
+            };
+
+            const takeTurn = async () => {
+                if (!battleId || finished || loading) return;
+                setLoading(true);
+                
+                try {
+                    const res = await fetch(`/api/battle/turn?battle_id=${battleId}`, {
+                        method: "POST"
+                    });
+                    const data = await res.json();
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    setMessages(data.messages || []);
+                    setGameState(data.state || "");
+                    setFinished(data.finished);
+                    setWinner(data.winner);
+                    setResources(data.resources);
+                } catch (err) {
+                    console.error("Error taking turn:", err);
+                    console.error("Turn Error: ", err.message);
+                    setAutoPlay(false);
+                }
+                setLoading(false);
+            };
+
+            return (
+                <div className="container mx-auto px-4 py-8 max-w-5xl">
+                    <header className="mb-8 text-center">
+                        <h1 className="text-4xl font-bold text-blue-400 mb-2">ModelPit</h1>
+                        <p className="text-slate-400">Watch LLMs challenge each other in games of logic and wit.</p>
+                    </header>
+
+                    
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Setup Panel */}
+                        <div className="bg-slate-800 p-6 rounded-xl shadow-lg h-fit">
+                            <h2 className="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">Battle Configuration</h2>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-1">Agent 1 (Attacker/X)</label>
+                                    <select 
+                                        value={agent1} 
+                                        onChange={(e) => setAgent1(e.target.value)}
+                                        className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        {MODELS.map(m => <option key={m} value={m}>{m.toUpperCase()}</option>)}
+                                    </select>
+                                    {agent1 === 'ollama' && (
+                                        <select 
+                                            value={agent1SubModel} 
+                                            onChange={(e) => setAgent1SubModel(e.target.value)}
+                                            className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {ollamaModels.map(m => <option key={m} value={m}>{m}</option>)}
+                                            {ollamaModels.length === 0 && <option value="">No Ollama Models Found</option>}
+                                        </select>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-1">Agent 2 (Defender/O)</label>
+                                    <select 
+                                        value={agent2} 
+                                        onChange={(e) => setAgent2(e.target.value)}
+                                        className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        {MODELS.map(m => <option key={m} value={m}>{m.toUpperCase()}</option>)}
+                                    </select>
+                                    {agent2 === 'ollama' && (
+                                        <select 
+                                            value={agent2SubModel} 
+                                            onChange={(e) => setAgent2SubModel(e.target.value)}
+                                            className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {ollamaModels.map(m => <option key={m} value={m}>{m}</option>)}
+                                            {ollamaModels.length === 0 && <option value="">No Ollama Models Found</option>}
+                                        </select>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-1">Game</label>
+                                    <select 
+                                        value={gameMode} 
+                                        onChange={(e) => setGameMode(e.target.value)}
+                                        className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        {GAMES.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                                    </select>
+                                </div>
+
+                                <button 
+                                    onClick={startBattle}
+                                    disabled={loading}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition duration-200 mt-4"
+                                >
+                                    Initialize Battle
+                                </button>
+                            </div>
+
+                            {battleId && (
+                                <div className="mt-8 space-y-4">
+                                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Controls</h3>
+                                    <div className="flex space-x-2">
+                                        <button 
+                                            onClick={takeTurn}
+                                            disabled={loading || finished}
+                                            className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 text-white py-2 px-2 rounded-md transition duration-200 text-sm"
+                                        >
+                                            Next Turn
+                                        </button>
+                                        <button 
+                                            onClick={() => setAutoPlay(!autoPlay)}
+                                            className={`flex-1 ${autoPlay ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white py-2 px-2 rounded-md transition duration-200 text-sm`}
+                                        >
+                                            {autoPlay ? 'Stop Auto' : 'Auto Play'}
+                                        </button>
+                                    </div>
+                                    {gameMode === 'word_guessing' && (
+                                        <div className="mt-4">
+                                            <div className="text-xs text-slate-400 mb-1">Attacker Resources</div>
+                                            <div className="w-full bg-slate-700 rounded-full h-2">
+                                                <div 
+                                                    className="bg-red-500 h-2 rounded-full transition-all duration-500" 
+                                                    style={{ width: `${resources}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Battle Area */}
+                        <div className="lg:col-span-2 space-y-6">
+                            {/* Game State Visualization */}
+                            <div className="bg-slate-800 p-6 rounded-xl shadow-lg">
+                                <h2 className="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">Arena</h2>
+                                {gameState ? (
+                                    <div className="flex flex-col items-center">
+                                        <div className="game-board mb-4 w-full text-center">
+                                            {gameState}
+                                        </div>
+                                        {finished && (
+                                            <div className="text-2xl font-bold text-yellow-400 animate-bounce">
+                                                {winner === 'draw' ? 'DRAW!' : `WINNER: ${winner.toUpperCase()}!`}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="h-48 flex items-center justify-center text-slate-500 italic">
+                                        Waiting for battle to begin...
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Live Feed */}
+                            <div className="bg-slate-800 p-6 rounded-xl shadow-lg flex flex-col">
+                                <h2 className="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">Live Feed</h2>
+                                <div className="message-feed space-y-4 pr-2">
+                                    {messages.length === 0 && (
+                                        <div className="text-slate-500 italic text-center py-8">No messages yet...</div>
+                                    )}
+                                    {messages.map((msg, idx) => (
+                                        <div key={idx} className={`p-3 rounded-lg ${msg.role.includes('1') || msg.role === 'attacker' ? 'bg-blue-900/40 ml-0 mr-8 border-l-4 border-blue-500' : 'bg-purple-900/40 ml-8 mr-0 border-r-4 border-purple-500 text-right'}`}>
+                                            <div className="text-xs font-bold text-slate-400 uppercase mb-1">{msg.role}</div>
+                                            <div className="text-sm mb-2">{msg.text}</div>
+                                            {msg.analysis && (
+                                                <details className="mt-2">
+                                                    <summary className="text-[10px] cursor-pointer text-slate-500 hover:text-slate-300 uppercase">Thought Process</summary>
+                                                    <div className="text-[10px] mt-1 text-slate-400 bg-black/30 p-2 rounded italic">
+                                                        {msg.analysis}
+                                                    </div>
+                                                </details>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <div ref={messagesEndRef} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
