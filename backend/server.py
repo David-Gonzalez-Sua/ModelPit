@@ -43,6 +43,14 @@ async def get_gemini_models():
 
 @app.post("/api/battle/start")
 async def start_battle(req: StartBattleRequest):
+    # Check if any battle is currently running
+    for b_id, b_data in battles.items():
+        if b_data["game"].running:
+            raise HTTPException(status_code=400, detail="A match is already running. Please wait for it to finish or stop it.")
+    
+    # Reset context: Clear all previous battles/history
+    battles.clear()
+    
     battle_id = str(uuid.uuid4())
     
     atk_model_type = Model(req.attacker.lower()) if req.attacker.lower() != "human" else Model.HUMAN

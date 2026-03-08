@@ -240,6 +240,18 @@
                 return () => clearInterval(interval);
             }, [autoPlay, battleId, finished]);
 
+            
+            const resetUI = () => {
+                setBattleId(null);
+                setMessages([]);
+                setGameState("");
+                setFinished(false);
+                setWinner(null);
+                setResources(100);
+                setSecretWord("");
+                setAutoPlay(false);
+            };
+    
             const startBattle = async () => {
                 setLoading(true);
                 
@@ -336,7 +348,8 @@
                                     <label className="block text-sm font-medium text-slate-400 mb-1">Agent 1 (Attacker/X)</label>
                                     <select 
                                         value={agent1} 
-                                        onChange={(e) => setAgent1(e.target.value)}
+                                        onChange={(e) => { setAgent1(e.target.value); resetUI(); }}
+                                        disabled={battleId && !finished}
                                         className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         {MODELS.map(m => <option key={m} value={m}>{m.toUpperCase()}</option>)}
@@ -344,7 +357,8 @@
                                     {agent1 === 'ollama' && (
                                         <select 
                                             value={agent1SubModel} 
-                                            onChange={(e) => setAgent1SubModel(e.target.value)}
+                                            onChange={(e) => { setAgent1SubModel(e.target.value); resetUI(); }}
+                                            disabled={battleId && !finished}
                                             className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             {ollamaModels.map(m => <option key={m} value={m}>{m}</option>)}
@@ -354,7 +368,8 @@
                                     {agent1 === 'gemini' && (
                                         <select 
                                             value={agent1SubModel || (geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]))} 
-                                            onChange={(e) => setAgent1SubModel(e.target.value)}
+                                            onChange={(e) => { setAgent1SubModel(e.target.value); resetUI(); }}
+                                            disabled={battleId && !finished}
                                             className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             {geminiModels.map(m => <option key={m} value={m}>{m}</option>)}
@@ -367,7 +382,8 @@
                                     <label className="block text-sm font-medium text-slate-400 mb-1">Agent 2 (Defender/O)</label>
                                     <select 
                                         value={agent2} 
-                                        onChange={(e) => setAgent2(e.target.value)}
+                                        onChange={(e) => { setAgent2(e.target.value); resetUI(); }}
+                                        disabled={battleId && !finished}
                                         className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         {MODELS.map(m => <option key={m} value={m}>{m.toUpperCase()}</option>)}
@@ -375,7 +391,8 @@
                                     {agent2 === 'ollama' && (
                                         <select 
                                             value={agent2SubModel} 
-                                            onChange={(e) => setAgent2SubModel(e.target.value)}
+                                            onChange={(e) => { setAgent2SubModel(e.target.value); resetUI(); }}
+                                            disabled={battleId && !finished}
                                             className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             {ollamaModels.map(m => <option key={m} value={m}>{m}</option>)}
@@ -385,7 +402,8 @@
                                     {agent2 === 'gemini' && (
                                         <select 
                                             value={agent2SubModel || (geminiModels.includes("gemini-3-flash-preview") ? "gemini-3-flash-preview" : (geminiModels.includes("gemini-2.0-flash") ? "gemini-2.0-flash" : geminiModels[0]))} 
-                                            onChange={(e) => setAgent2SubModel(e.target.value)}
+                                            onChange={(e) => { setAgent2SubModel(e.target.value); resetUI(); }}
+                                            disabled={battleId && !finished}
                                             className="w-full mt-2 bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             {geminiModels.map(m => <option key={m} value={m}>{m}</option>)}
@@ -398,7 +416,8 @@
                                     <label className="block text-sm font-medium text-slate-400 mb-1">Game</label>
                                     <select 
                                         value={gameMode} 
-                                        onChange={(e) => setGameMode(e.target.value)}
+                                        onChange={(e) => { setGameMode(e.target.value); resetUI(); }}
+                                        disabled={battleId && !finished}
                                         className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         {GAMES.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -407,7 +426,7 @@
 
                                 <button 
                                     onClick={startBattle}
-                                    disabled={loading}
+                                    disabled={loading || (battleId && !finished)}
                                     className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition duration-200 mt-4"
                                 >
                                     Initialize Battle
