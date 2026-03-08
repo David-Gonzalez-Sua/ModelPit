@@ -71,12 +71,45 @@ Return ONLY JSON:
     def get_state(self):
         if not self.messages:
             return "No messages yet."
-        return "\n".join([f"{m['role'].upper()}: {m['text']}" for m in self.messages])
+        # Distinctly format the history for the model to prevent confusion
+        lines = []
+        for m in self.messages:
+            role = str(m.get('role', 'unknown')).upper()
+            text = str(m.get('text', '')).strip()
+            if text:
+                lines.append(f"{role}: {text}")
+        return "\n".join(lines)
 
     def update(self, role, data):
-        message = data.get("message", "")
+        message = data.get("message", "").strip()
         analysis = data.get("analysis", "")
+        
+        # CLEANUP: Remove common "echo" prefixes that LLMs sometimes include
+        prefixes_to_strip = [
+            "ATTACKER:", "DEFENDER:", "AGENT 1:", "AGENT 2:",
+            "THE ATTACKER SAYS:", "THE DEFENDER SAYS:",
+            "MY RESPONSE:", "RESPONSE:"
+        ]
+        
+        msg_upper = message.upper()
+        changed = True
+        while changed:
+            changed = False
+            for prefix in prefixes_to_strip:
+                if msg_upper.startswith(prefix):
+                    message = message[len(prefix):].strip()
+                    msg_upper = message.upper()
+                    changed = True
+        
+        # Strip redundant quotes
+        if len(message) >= 2 and message[0] == message[-1] and message[0] in ['"', "'"]:
+            message = message[1:-1].strip()
+
+        if not message:
+            message = "..."
+
         self.messages.append({"role": role, "text": message, "analysis": analysis})
+        self.round += 1 # Ensure round increments for each move
         
         if role == "defender":
             if self.secret_word.lower() in message.lower():

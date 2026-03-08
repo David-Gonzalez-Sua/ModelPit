@@ -43,12 +43,7 @@ def get_gemini_models():
 
 @app.post("/api/battle/start")
 def start_battle(req: StartBattleRequest):
-    # Check if any battle is currently running
-    for b_id, b_data in battles.items():
-        if b_data["game"].running:
-            raise HTTPException(status_code=400, detail="A match is already running. Please wait for it to finish or stop it.")
-    
-    # Reset context: Clear all previous battles/history
+    # Clear all previous battles/history to ensure a fresh start
     battles.clear()
     
     battle_id = str(uuid.uuid4())
@@ -76,7 +71,12 @@ def start_battle(req: StartBattleRequest):
         "gameMode": req.gameMode
     }
     
-    return {"battleId": battle_id, "secretWord": getattr(game, 'secret_word', None)}
+    return {
+        "battleId": battle_id, 
+        "secretWord": getattr(game, 'secret_word', None),
+        "state": game.get_state(),
+        "messages": game.messages
+    }
 
 @app.post("/api/battle/turn")
 def take_turn(battle_id: str):

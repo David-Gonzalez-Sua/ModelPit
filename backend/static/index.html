@@ -244,6 +244,7 @@
             const [gameState, setGameState] = useState("");
             const [finished, setFinished] = useState(false);
             const [winner, setWinner] = useState(null);
+            const [error, setError] = useState(null);
             const [loading, setLoading] = useState(false);
             const [autoPlay, setAutoPlay] = useState(false);
             const [resources, setResources] = useState(100);
@@ -318,13 +319,13 @@
 
             useEffect(() => {
                 let interval;
-                if (autoPlay && battleId && !finished) {
+                if (autoPlay && battleId && !finished && !loading) {
                     interval = setInterval(() => {
                         takeTurn();
                     }, 2000);
                 }
                 return () => clearInterval(interval);
-            }, [autoPlay, battleId, finished]);
+            }, [autoPlay, battleId, finished, loading]);
 
             
             const resetUI = () => {
@@ -333,6 +334,7 @@
                 setGameState("");
                 setFinished(false);
                 setWinner(null);
+                setError(null);
                 setResources(100);
                 setSecretWord("");
                 setAutoPlay(false);
@@ -363,9 +365,12 @@
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.detail || "Failed to start battle");
                     setBattleId(data.battleId);
+                    setGameState(data.state || "");
+                    setMessages(data.messages || []);
                     if (data.secretWord) setSecretWord(data.secretWord);
                 } catch (err) {
                     console.error("Error starting battle: ", err.message);
+                    setError(err.message);
                 }
                 setLoading(false);
             };
@@ -382,6 +387,7 @@
                     }
                 } catch (err) {
                     console.error("Error stopping battle:", err);
+                    setError(err.message);
                 }
             };
 
@@ -396,14 +402,28 @@
                         method: "POST"
                     });
                     const data = await res.json();
-                    if (currentBattleId !== battleIdRef.current) return;
+                    
+                    if (currentBattleId !== battleIdRef.current) {
+                        setLoading(false);
+                        return;
+                    }
+
                     if (data.error) {
                         throw new Error(data.error);
                     }
 
+                    const updateUI = (msgs, state, isFinished, win, resrc, secret) => {
+                        if (currentBattleId !== battleIdRef.current) return;
+                        setMessages(msgs);
+                        setGameState(state);
+                        setFinished(isFinished);
+                        setWinner(win);
+                        setResources(resrc);
+                        if (secret) setSecretWord(secret);
+                    };
+
                     // For word guessing, we sometimes get both Attacker and Defender messages in one call.
-                    // We'll show the Attacker's message immediately, then the Defender's after a short delay for realism.
-                    if (gameMode === 'word_guessing' && data.messages.length > messages.length + 1) {
+                    if (gameMode === 'word_guessing' && data.messages && data.messages.length > messages.length + 1) {
                         const allMessages = data.messages;
                         const attackerMessage = allMessages[allMessages.length - 2];
                         const defenderMessage = allMessages[allMessages.length - 1];
@@ -413,26 +433,19 @@
 
                         // 2. Wait 800ms, then show Defender's response
                         setTimeout(() => {
-                            setMessages(allMessages);
-                            setGameState(data.state || "");
-                            setFinished(data.finished);
-                            setWinner(data.winner);
-                            setResources(data.resources);
-                            if (data.secretWord) setSecretWord(data.secretWord);
+                            updateUI(allMessages, data.state, data.finished, data.winner, data.resources, data.secretWord);
+                            setLoading(false);
                         }, 800);
                     } else {
-                        setMessages(data.messages || []);
-                        setGameState(data.state || "");
-                        setFinished(data.finished);
-                        setWinner(data.winner);
-                        setResources(data.resources);
-                        if (data.secretWord) setSecretWord(data.secretWord);
+                        updateUI(data.messages || [], data.state || "", data.finished, data.winner, data.resources, data.secretWord);
+                        setLoading(false);
                     }
                 } catch (err) {
                     console.error("Error taking turn:", err);
+                    setError(err.message);
                     setAutoPlay(false);
+                    setLoading(false);
                 }
-                setLoading(false);
             };
 
             return (
@@ -551,6 +564,13 @@
                                 >
                                     Initialize Battle
                                 </button>
+                                
+                                {error && (
+                                    <div className="mt-4 p-3 bg-red-900/40 border border-red-500/50 rounded-md text-red-200 text-xs font-medium animate-pulse">
+                                        <div className="font-bold uppercase mb-1">Error</div>
+                                        {error}
+                                    </div>
+                                )}
                             </div>
 
                             {battleId && (
